@@ -1,6 +1,7 @@
 import express from "express";
 import * as path from "path";
 import dotenv from "dotenv";
+import db from "./models/tdee_calculator.db.js";
 
 dotenv.config();
 const app = express();
@@ -13,6 +14,10 @@ app.use((err, req, res, next) => {
 
 app.use("/", (req, res) => {
   res.status(200).send("welcome to TDEE calculator API");
+});
+
+app.use("/user", (req, res) => {
+  res.status(200).send("welcome to TDEE calculator si user API");
 });
 
 app.listen(PORT, () => {
