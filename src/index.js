@@ -3,7 +3,6 @@ import * as path from "path";
 import dotenv from "dotenv";
 import { userRoutes } from "./routes/userRoutes.js";
 import { profileRoutes } from "./routes/profileRoutes.js";
-import mealPlanRoutes from "./routes/mealPlanRoutes.js";
 
 dotenv.config();
 const app = express();
@@ -17,7 +16,6 @@ app.use("/", (req, res) => {
 });
 app.use("user/v1/users", userRoutes);
 app.use("user/v1/profiles", profileRoutes);
-app.use("/api/v1", mealPlanRoutes);
 app.listen(PORT, () => {
   console.log(`server is running on port: ${PORT}`);
 });
