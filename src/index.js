@@ -9,7 +9,7 @@ const app = express();
 const PORT = process.env.PORT || 80;
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(500).send("Something broke!");
+  res.status(500).send("Something broke! Please Try Again Later!");
 });
 app.use("/", (req, res) => {
   res.status(200).send("welcome to TDEE calculator API");
