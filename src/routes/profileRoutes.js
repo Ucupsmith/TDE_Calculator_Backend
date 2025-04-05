@@ -2,7 +2,7 @@ import express from "express";
 import {
   getProfile,
   createuserProfile,
-} from "../controllers/profileController.js";
+} from "../controllers/profileController";
 
 const profileRoutes = express.Router();
 
