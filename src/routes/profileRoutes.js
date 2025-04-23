@@ -2,11 +2,11 @@ import express from "express";
 import {
   getProfile,
   createuserProfile,
-} from "../controllers/profileController";
+} from "../controllers/ProfileController.js";
 
 const profileRoutes = express.Router();
 
 profileRoutes.get("/:id", getProfile);
-profileRoutes.get("/", createuserProfile);
+profileRoutes.post("/", createuserProfile);
 
 export { profileRoutes };
