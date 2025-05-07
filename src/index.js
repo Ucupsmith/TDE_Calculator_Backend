@@ -4,10 +4,11 @@ import dotenv from "dotenv";
 import { userRoutes } from "./routes/UserRoutes.js";
 import { profileRoutes } from "./routes/profileRoutes.js";
 import { mealPlanRoutes } from "./routes/mealPlanRoutes.js";
+import { tdeeRoutes } from "./routes/tdeeRoutes.js";
 
 dotenv.config();
 const app = express();
-const PORT = process.env.PORT || 80;
+const PORT = process.env.PORT || 8080;
 
 // Middleware for parsing JSON request body
 app.use(express.json());
@@ -21,6 +22,7 @@ app.get("/", (req, res) => {
 app.use("/user/v1/users", userRoutes);
 app.use("/user/v1/profiles", profileRoutes);
 app.use("/user/v1/meal-plans", mealPlanRoutes);
+app.use("/user/v1/tdee", tdeeRoutes);
 
 // Error handler middleware (should come after routes)
 app.use((err, req, res, next) => {
