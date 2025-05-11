@@ -1,4 +1,4 @@
-import mysql2 from "mysql2";
+import mysql2 from "mysql2/promise";
 
 const db = mysql2.createPool({
   host: process.env.DB_HOST || "localhost",

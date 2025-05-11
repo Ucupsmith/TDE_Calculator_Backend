@@ -1,4 +1,5 @@
 import db from "../config/db.js";
+import { PrismaClient } from "@prisma/client";
 
 export const getMealPlanById = async (mealPlanId) => {
   const [rows] = await db.query(
