@@ -1,4 +1,8 @@
-import { getProfileByUserId, createProfile } from "../models/ProfileModel.js";
+import {
+  getProfileByUserId,
+  createProfile,
+  updateProfile,
+} from "../models/ProfileModel.js";
 
 const getProfile = async (req, res) => {
   try {
@@ -26,4 +30,39 @@ const createuserProfile = async (req, res) => {
   }
 };
 
-export { getProfile, createuserProfile };
+const updatedProfile = async (req, res) => {
+  const userId = parseInt(req.params.userId);
+  const {
+    full_name,
+    birth_place,
+    birth_date,
+    address,
+    phone_number,
+    email,
+    gender,
+    avatar_url,
+  } = req.body;
+  try {
+    const updatesProfile = await updateProfile(userId, {
+      full_name,
+      birth_place,
+      birth_date,
+      address,
+      phone_number,
+      email,
+      gender,
+      avatar_url,
+    });
+    return res.status(200).json({
+      message: "Profile updated successfully",
+      data: updatesProfile,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Failed to update profile",
+      error: error.message,
+    });
+  }
+};
+
+export { getProfile, createuserProfile, updatedProfile };

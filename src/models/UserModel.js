@@ -1,14 +1,53 @@
 import db from "../config/db.js";
+import prisma from "../../prisma/prismaclient.js";
 
-export const getUserById = async (id) => {
-  const [rows] = await db.query("SELECT * FROM User WHERE user_id = ?", [id]);
-  return rows[0];
+export const getUser = async () => {
+  return await prisma.user.findMany({
+    select: {
+      userId: true,
+      username: true,
+      email: true,
+    },
+  });
 };
 
-export const createUser = async (username, password, email) => {
-  const [result] = await db.query(
-    `INSERT INTO Users (username, password, email) VALUES (?, ?, ?)`,
-    [username, password, email]
-  );
-  return result.insertId;
+export const getUserById = async (id) => {
+  return await prisma.user.findUnique({
+    where: { userId: id },
+    select: {
+      userId: true,
+    },
+  });
+};
+
+export const createUser = async (username, hashedPassword, email) => {
+  return await prisma.user.create({
+    data: {
+      username,
+      email,
+      password: hashedPassword,
+    },
+  });
+};
+
+export const getUserByEmail = async (email) => {
+  return await prisma.user.findUnique({
+    where: email,
+  });
+};
+
+export const updateUser = async (newUsername, newEmail, newPassword) => {
+  return await prisma.user.updateMany({
+    data: {
+      username: newUsername,
+      email: newEmail,
+      password: newPassword,
+    },
+  });
+};
+
+export const deleteUser = async (id) => {
+  return await prisma.user.delete({
+    where: { userId: id },
+  });
 };
