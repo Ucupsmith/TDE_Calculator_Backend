@@ -1,4 +1,4 @@
-import prisma from "../../prisma/prismaclient.js";
+import prisma from "../../prisma/prismaClient.js";
 
 // BMI calculation
 export function calculateBMI(weight, height) {
