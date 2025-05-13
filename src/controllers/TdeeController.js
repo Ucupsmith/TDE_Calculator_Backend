@@ -6,39 +6,51 @@ import {
   saveTdeeCalculation,
   getTdeeByProfileId,
 } from "../models/TdeeModel.js";
+import prisma from "../../prisma/prismaClient.js";
 
-export const calculateTdee = async (req, res) => {
+// Hitung TDEE tanpa save
+export const calculateTdeeOnly = (req, res) => {
+  const { gender, weight, height, age, activity_level, region, goal } = req.body;
+  if (!gender || !weight || !height || !age || !activity_level || !goal) {
+    return res.status(400).json({ message: "Missing required fields" });
+  }
+  const bmi = calculateBMI(weight, height);
+  const bmiCategory = getBMICategory(bmi, region || "asia");
+  const bmr = calculateBMR(gender, weight, height, age);
+  const tdee = calculateTDEE(bmr, activity_level);
+
+  res.json({
+    bmi: bmi.toFixed(2),
+    bmiCategory,
+    bmr: bmr.toFixed(2),
+    tdee: tdee.toFixed(2),
+    goal
+  });
+};
+
+// Save hasil perhitungan ke database
+export const saveTdeeCalculationController = async (req, res) => {
+  const { profileId, gender, weight, height, age, activity_level, goal, tdee_result, saved_id } = req.body;
+  if (!profileId || !gender || !weight || !height || !age || !activity_level || !goal || !tdee_result) {
+    return res.status(400).json({ message: "Missing required fields" });
+  }
   try {
-    const { gender, weight, height, age, activity_level, region, profileId, goal } = req.body;
-    if (!gender || !weight || !height || !age || !activity_level || !profileId || !goal) {
-      return res.status(400).json({ message: "Missing required fields" });
-    }
-    const bmi = calculateBMI(weight, height);
-    const bmiCategory = getBMICategory(bmi, region || "asia");
-    const bmr = calculateBMR(gender, weight, height, age);
-    const tdee = calculateTDEE(bmr, activity_level);
-
-    // Simpan ke database
-    const saved = await saveTdeeCalculation({
-      profileId,
-      gender,
-      weight,
-      height,
-      age,
-      activity_level,
-      goal,
-      tdee_result: tdee,
+    const saved = await prisma.tdeeCalculation.create({
+      data: {
+        profileId,
+        gender,
+        weight,
+        height,
+        age,
+        activity_level,
+        goal,
+        tdee_result,
+        saved_id: saved_id !== undefined ? saved_id : 0
+      }
     });
-
-    res.json({
-      bmi: bmi.toFixed(2),
-      bmiCategory,
-      bmr: bmr.toFixed(2),
-      tdee: tdee.toFixed(2),
-      saved,
-    });
+    res.status(201).json({ message: "TDEE calculation saved", saved });
   } catch (error) {
-    res.status(500).json({ message: "Error calculating TDEE", error: error.message });
+    res.status(500).json({ message: "Error saving TDEE calculation", error: error.message });
   }
 };
 

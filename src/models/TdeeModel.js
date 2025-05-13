@@ -1,4 +1,4 @@
-import prisma from "../../prisma/prismaclient.js";
+import prisma from "../../prisma/prismaClient.js";
 
 // BMI calculation
 export function calculateBMI(weight, height) {
@@ -56,6 +56,7 @@ export const saveTdeeCalculation = async (data) => {
       activity_level: data.activity_level,
       goal: data.goal,
       tdee_result: data.tdee_result,
+      saved_id: data.saved_id !== undefined ? data.saved_id : 0
     },
   });
 };
