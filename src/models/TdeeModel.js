@@ -56,6 +56,7 @@ export const saveTdeeCalculation = async (data) => {
       activity_level: data.activity_level,
       goal: data.goal,
       tdee_result: data.tdee_result,
+      saved_id: data.saved_id !== undefined ? data.saved_id : 0
     },
   });
 };

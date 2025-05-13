@@ -29,7 +29,7 @@ app.use("/user/v1/notifications", notificationRoutes);
 // Error handler middleware (should come after routes)
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(500).send("Something broke! Please Try Again Later!");
+  res.status(500).send("Something broke! Please Try Again Later! ");
 });
 
 app.listen(PORT, () => {
