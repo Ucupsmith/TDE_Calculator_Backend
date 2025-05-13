@@ -121,6 +121,7 @@ model Admin {
   approvals          Approval[]
   adminNotifications AdminNotification[]
   createNotifcations CreateNotification[]
+  articles           Article[]
 
   @@map("admins")
 }
@@ -204,5 +205,20 @@ model CreateNotification {
   admin Admin @relation(fields: [adminId], references: [adminId])
 }
 
+model Article {
+  article_id Int      @id @default(autoincrement()) @map("article_id")
+  title      String   @db.VarChar(255)
+  content    String   @db.Text
+  image_path String?  @db.VarChar(255)
+  category   String   @db.VarChar(255)
+  author_id  Int      @map("author_id")
+  created_at DateTime @default(now()) @map("created_at")
+  updated_at DateTime @updatedAt @map("updated_at")
+  status     Status   @default(Pending)
+  views      Int      @default(0)
+  likes      Int      @default(0)
 
+  author Admin @relation(fields: [author_id], references: [adminId])
 
+  @@map("articles")
+}

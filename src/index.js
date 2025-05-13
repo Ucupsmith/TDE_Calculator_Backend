@@ -23,6 +23,7 @@ app.get("/", (req, res) => {
 app.use("/user/v1/users", userRoutes);
 app.use("/user/v1/profiles", profileRoutes);
 app.use("/user/v1/meal-plans", mealPlanRoutes);
+app.use("/user/v1/articles", articleRoutes);
 app.use("/user/v1/tdee", tdeeRoutes);
 app.use("/user/v1/notifications", notificationRoutes);
 
@@ -35,3 +36,5 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`server is running on port: ${PORT}`);
 });
+
+
