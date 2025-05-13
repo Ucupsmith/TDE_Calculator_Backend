@@ -8,7 +8,7 @@ import { tdeeRoutes } from "./routes/tdeeRoutes.js";
 
 dotenv.config();
 const app = express();
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 3000;
 
 // Middleware for parsing JSON request body
 app.use(express.json());

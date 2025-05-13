@@ -203,3 +203,6 @@ model CreateNotification {
 
   admin Admin @relation(fields: [adminId], references: [adminId])
 }
+
+
+
