@@ -5,6 +5,7 @@ import { userRoutes } from "./routes/UserRoutes.js";
 import { profileRoutes } from "./routes/profileRoutes.js";
 import { mealPlanRoutes } from "./routes/mealPlanRoutes.js";
 import { tdeeRoutes } from "./routes/tdeeRoutes.js";
+import { notificationRoutes } from "./routes/notificationRoutes.js";
 
 dotenv.config();
 const app = express();
@@ -23,6 +24,7 @@ app.use("/user/v1/users", userRoutes);
 app.use("/user/v1/profiles", profileRoutes);
 app.use("/user/v1/meal-plans", mealPlanRoutes);
 app.use("/user/v1/tdee", tdeeRoutes);
+app.use("/user/v1/notifications", notificationRoutes);
 
 // Error handler middleware (should come after routes)
 app.use((err, req, res, next) => {

@@ -1,5 +1,5 @@
 import db from "../config/db.js";
-import prisma from "../../prisma/prismaclient.js";
+import prisma from "../../prisma/prismaClient.js";
 
 export const getUser = async () => {
   return await prisma.user.findMany({
