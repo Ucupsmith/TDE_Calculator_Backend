@@ -1,3 +1,5 @@
+import prisma from "../../prisma/prismaclient.js";
+
 // BMI calculation
 export function calculateBMI(weight, height) {
   const heightM = height / 100;
@@ -41,4 +43,25 @@ export function calculateTDEE(bmr, activityLevel) {
     extra_active: 1.9,
   };
   return bmr * (factors[activityLevel] || 1.2);
-} 
+}
+
+export const saveTdeeCalculation = async (data) => {
+  return await prisma.tdeeCalculation.create({
+    data: {
+      profileId: data.profileId,
+      gender: data.gender,
+      weight: data.weight,
+      height: data.height,
+      age: data.age,
+      activity_level: data.activity_level,
+      goal: data.goal,
+      tdee_result: data.tdee_result,
+    },
+  });
+};
+
+export const getTdeeByProfileId = async (profileId) => {
+  return await prisma.tdeeCalculation.findMany({
+    where: { profileId: profileId },
+  });
+}; 
