@@ -6,6 +6,11 @@ import { profileRoutes } from "./routes/profileRoutes.js";
 import { mealPlanRoutes } from "./routes/mealPlanRoutes.js";
 import { tdeeRoutes } from "./routes/tdeeRoutes.js";
 import { notificationRoutes } from "./routes/notificationRoutes.js";
+<<<<<<< Updated upstream
+import { paymentRoutes } from "./routes/paymentRoutes.js";
+=======
+import { articleRoutes } from "./routes/articleRoutes.js";
+>>>>>>> Stashed changes
 
 dotenv.config();
 const app = express();
@@ -26,6 +31,7 @@ app.use("/user/v1/meal-plans", mealPlanRoutes);
 app.use("/user/v1/articles", articleRoutes);
 app.use("/user/v1/tdee", tdeeRoutes);
 app.use("/user/v1/notifications", notificationRoutes);
+app.use("/user/v1/payments", paymentRoutes);
 
 // Error handler middleware (should come after routes)
 app.use((err, req, res, next) => {
