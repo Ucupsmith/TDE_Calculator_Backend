@@ -6,11 +6,8 @@ import { profileRoutes } from "./routes/profileRoutes.js";
 import { mealPlanRoutes } from "./routes/mealPlanRoutes.js";
 import { tdeeRoutes } from "./routes/tdeeRoutes.js";
 import { notificationRoutes } from "./routes/notificationRoutes.js";
-<<<<<<< Updated upstream
 import { paymentRoutes } from "./routes/paymentRoutes.js";
-=======
 import { articleRoutes } from "./routes/articleRoutes.js";
->>>>>>> Stashed changes
 
 dotenv.config();
 const app = express();
