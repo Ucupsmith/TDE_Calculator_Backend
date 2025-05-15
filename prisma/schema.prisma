@@ -139,6 +139,10 @@ model MealPlan {
   vegan        String  @db.VarChar(255)
   glutten_free String  @db.VarChar(255)
   low_carb     String  @db.VarChar(255)
+  total_calories Int   @default(0) @map("total_calories")
+  remaining_calories Int @default(0) @map("remaining_calories")
+  selected_foods Json? @map("selected_foods")
+  status       String  @default("pending") @map("status")
 
   user            User            @relation(fields: [userId], references: [userId])
   admin           Admin           @relation(fields: [adminId], references: [adminId])

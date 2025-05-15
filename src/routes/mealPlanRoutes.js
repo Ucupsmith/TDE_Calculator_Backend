@@ -1,13 +1,16 @@
 import express from "express";
 import {
-  getMealPlan,
+  createMealPlan,
   getUserMealPlans,
-  createUserMealPlan,
+  getMealPlan,
   updateUserMealPlan,
   deleteUserMealPlan,
 } from "../controllers/MealPlanController.js";
 
 const mealPlanRoutes = express.Router();
+
+// Create a new meal plan
+mealPlanRoutes.post("/", createMealPlan);
 
 // Get all meal plans for a specific user
 mealPlanRoutes.get("/user/:userId", getUserMealPlans);
@@ -15,10 +18,7 @@ mealPlanRoutes.get("/user/:userId", getUserMealPlans);
 // Get a specific meal plan by ID
 mealPlanRoutes.get("/:id", getMealPlan);
 
-// Create a new meal plan
-mealPlanRoutes.post("/", createUserMealPlan);
-
-// Update an existing meal plan
+// Update meal plan with selected food
 mealPlanRoutes.put("/:id", updateUserMealPlan);
 
 // Delete a meal plan

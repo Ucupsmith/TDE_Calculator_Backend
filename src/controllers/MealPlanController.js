@@ -1,81 +1,150 @@
-import {
-  getMealPlanById,
-  getMealPlansByUserId,
-  createMealPlan,
-  updateMealPlan,
-  deleteMealPlan,
-} from "../models/MealPlanModel.js";
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 
-export const getMealPlan = async (req, res) => {
-  try {
-    const mealPlan = await getMealPlanById(req.params.id);
-    if (!mealPlan)
-      return res.status(404).json({ message: "Meal plan not found" });
-    res.json(mealPlan);
-  } catch (error) {
-    res.status(500).json({ message: "Error retrieving meal plan" });
-  }
-};
+// Create new meal plan
+const createMealPlan = async (req, res) => {
+    try {
+        const { userId, tdeeId, profileId, goal } = req.body;
+        
+        // Get TDEE result
+        const tdeeCalculation = await prisma.tdeeCalculation.findUnique({
+            where: { tdeeId: parseInt(tdeeId) }
+        });
 
-export const getUserMealPlans = async (req, res) => {
-  try {
-    const mealPlans = await getMealPlansByUserId(req.params.userId);
-    res.json(mealPlans);
-  } catch (error) {
-    res.status(500).json({ message: "Error retrieving meal plans" });
-  }
-};
+        if (!tdeeCalculation) {
+            return res.status(404).json({ message: 'TDEE calculation not found' });
+        }
 
-export const createUserMealPlan = async (req, res) => {
-  try {
-    const { user_id, admin_id, goal, meal_details } = req.body;
+        let totalCalories = parseInt(tdeeCalculation.tdee_result);
+        let remainingCalories = totalCalories;
 
-    if (!user_id || !goal) {
-      return res.status(400).json({ message: "User ID and goal are required" });
+        // Adjust calories based on goal
+        if (goal === 'LoseWeight') {
+            totalCalories -= 500;
+            remainingCalories = totalCalories;
+        } else if (goal === 'GainWeight') {
+            totalCalories += 500;
+            remainingCalories = totalCalories;
+        }
+
+        const mealPlan = await prisma.mealPlan.create({
+            data: {
+                userId: parseInt(userId),
+                tdeeId: parseInt(tdeeId),
+                profileId: parseInt(profileId),
+                goal,
+                total_calories: totalCalories,
+                remaining_calories: remainingCalories,
+                selected_foods: [],
+                status: 'pending'
+            }
+        });
+
+        res.status(201).json(mealPlan);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
     }
-
-    const mealPlanId = await createMealPlan(
-      user_id,
-      admin_id,
-      goal,
-      meal_details
-    );
-
-    res.status(201).json({ message: "Meal plan created", mealPlanId });
-  } catch (error) {
-    res.status(500).json({ message: "Error creating meal plan" });
-  }
 };
 
-export const updateUserMealPlan = async (req, res) => {
-  try {
-    const { goal, meal_details } = req.body;
-    const mealPlanId = req.params.id;
-
-    const success = await updateMealPlan(mealPlanId, goal, meal_details);
-
-    if (!success) {
-      return res
-        .status(404)
-        .json({ message: "Meal plan not found or no changes made" });
+// Get all meal plans for a user
+const getUserMealPlans = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const mealPlans = await prisma.mealPlan.findMany({
+            where: {
+                userId: parseInt(userId)
+            },
+            include: {
+                tdeeCalculation: true
+            }
+        });
+        res.json(mealPlans);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
     }
-
-    res.json({ message: "Meal plan updated successfully" });
-  } catch (error) {
-    res.status(500).json({ message: "Error updating meal plan" });
-  }
 };
 
-export const deleteUserMealPlan = async (req, res) => {
-  try {
-    const success = await deleteMealPlan(req.params.id);
-
-    if (!success) {
-      return res.status(404).json({ message: "Meal plan not found" });
+// Get a specific meal plan
+const getMealPlan = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const mealPlan = await prisma.mealPlan.findUnique({
+            where: {
+                mealplanId: parseInt(id)
+            },
+            include: {
+                tdeeCalculation: true
+            }
+        });
+        
+        if (!mealPlan) {
+            return res.status(404).json({ message: 'Meal plan not found' });
+        }
+        
+        res.json(mealPlan);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
     }
+};
 
-    res.json({ message: "Meal plan deleted successfully" });
-  } catch (error) {
-    res.status(500).json({ message: "Error deleting meal plan" });
-  }
+// Update meal plan with selected food
+const updateUserMealPlan = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { food } = req.body;
+
+        const mealPlan = await prisma.mealPlan.findUnique({
+            where: {
+                mealplanId: parseInt(id)
+            }
+        });
+
+        if (!mealPlan) {
+            return res.status(404).json({ message: 'Meal plan not found' });
+        }
+
+        // Update selected foods and remaining calories
+        const selectedFoods = mealPlan.selected_foods || [];
+        selectedFoods.push(food);
+
+        const remainingCalories = mealPlan.remaining_calories - food.calories;
+
+        const updatedMealPlan = await prisma.mealPlan.update({
+            where: {
+                mealplanId: parseInt(id)
+            },
+            data: {
+                selected_foods: selectedFoods,
+                remaining_calories: remainingCalories
+            }
+        });
+
+        res.json(updatedMealPlan);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// Delete meal plan
+const deleteUserMealPlan = async (req, res) => {
+    try {
+        const { id } = req.params;
+        await prisma.mealPlan.delete({
+            where: {
+                mealplanId: parseInt(id)
+            }
+        });
+
+        res.json({ message: 'Meal plan deleted successfully' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+module.exports = {
+    createMealPlan,
+    getUserMealPlans,
+    getMealPlan,
+    updateUserMealPlan,
+    deleteUserMealPlan
 };
