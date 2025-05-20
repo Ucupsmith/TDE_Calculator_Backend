@@ -62,4 +62,23 @@ export const getTdeeHistory = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: "Error fetching TDEE history", error: error.message });
   }
+};
+
+export const getLatestTdeeResultByProfile = async (req, res) => {
+  try {
+    const { profileId } = req.query;
+    if (!profileId) {
+      return res.status(400).json({ message: "profileId is required" });
+    }
+    const latest = await prisma.tdeeCalculation.findFirst({
+      where: { profileId: Number(profileId) },
+      orderBy: { createdAt: 'desc' }
+    });
+    if (!latest) {
+      return res.status(404).json({ message: "No TDEE result found" });
+    }
+    res.json({ tdee: latest.tdee_result, lastCalculated: latest.createdAt });
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching TDEE result", error: error.message });
+  }
 }; 
