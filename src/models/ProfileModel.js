@@ -1,7 +1,7 @@
 import db from "../config/db.js";
 
 export const getProfileByUserId = async (userId) => {
-  const [rows] = await db.query("SELECT * FROM Profile WHERE user_id = ?", [
+  const [rows] = await db.query("SELECT * FROM Profiles WHERE user_id = ?", [
     userId,
   ]);
   return rows[0];

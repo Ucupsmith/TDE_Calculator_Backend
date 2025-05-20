@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import { userRoutes } from "./routes/UserRoutes.js";
 import { profileRoutes } from "./routes/profileRoutes.js";
 import { mealPlanRoutes } from "./routes/mealPlanRoutes.js";
+import { articleRoutes } from "./routes/articleRoutes.js";
 
 dotenv.config();
 const app = express();
@@ -21,6 +22,7 @@ app.get("/", (req, res) => {
 app.use("/user/v1/users", userRoutes);
 app.use("/user/v1/profiles", profileRoutes);
 app.use("/user/v1/meal-plans", mealPlanRoutes);
+app.use("/user/v1/articles", articleRoutes);
 
 // Error handler middleware (should come after routes)
 app.use((err, req, res, next) => {

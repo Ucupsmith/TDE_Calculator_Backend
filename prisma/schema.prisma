@@ -12,3 +12,114 @@ datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
 }
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum ActivityLevel {
+  SEDENTARY
+  LIGHTLY_ACTIVE
+  MODERATELY_ACTIVE
+  VERY_ACTIVE
+  EXTRA_ACTIVE
+}
+
+enum Goal {
+  LOSE_WEIGHT
+  MAINTAIN
+  GAIN_WEIGHT
+}
+
+model User {
+  userId Int @id @map("user_id") @default(autoincrement())
+  username String @db.VarChar(255)
+  password String @db.VarChar(255)
+  email String @db.VarChar(255)
+  reset_token String? @db.VarChar(25)
+  reset_token_expiry DateTime? @db.DateTime()
+
+  profile Profile?
+  mealPlans MealPlan[]
+  articles Article[]
+
+  @@map("users")
+}
+
+model TdeeCalculation {
+  tdeeId Int @id @map("tdee_id") @default(autoincrement())
+  profileId Int @map("profile_id")
+  goal Goal @map("goal")
+  tdee_result Decimal @map("tdee_result")
+
+  profile Profile @relation(fields: [profileId], references: [profileId])
+
+  @@map("tdee_calculations")
+}
+
+model Profile {
+  profileId Int @id @map("profile_id") @default(autoincrement())
+  userId Int @unique @map("user_id")
+  full_name String @db.VarChar(255)
+  birth_date DateTime @db.DateTime()
+  birth_place String @db.VarChar(255)
+  address String @db.VarChar(255)
+  phone_number String @db.VarChar(12)
+  email String @db.VarChar(255)
+  avatar String? 
+  gender Gender
+  weight Decimal @db.Decimal(5,2)
+  height Decimal @db.Decimal(5,2)
+  activityLevel ActivityLevel @map("activity_level")
+  
+  user User @relation(fields: [userId], references: [userId])
+  tdeeCalculations TdeeCalculation[]
+
+  @@map("profiles")
+}
+
+model Admin {
+  adminId Int @id @map("admin_id") @default(autoincrement())
+  admin_name String @db.VarChar(255)
+  email String @db.VarChar(255)
+  password Int @db.Int
+
+  mealPlans MealPlan[]
+
+  @@map("admins")
+}
+
+model MealPlan {
+  mealplanId Int @id @map("meal_plans") @default(autoincrement())
+  userId Int @map("user_id")
+  adminId Int @map("admin_id")
+  goal Goal @map("goal")
+  meal_detail String? @map("meal_details")
+  breakfast String @db.VarChar(255)
+  lunch String @db.VarChar(255)
+  dinner String @db.VarChar(255)
+  vegan String @db.VarChar(255)
+  glutten_free String @db.VarChar(255)
+  low_carb String @db.VarChar(255)
+  
+  user User @relation(fields: [userId], references: [userId])
+  admin Admin @relation(fields: [adminId], references: [adminId])
+
+  @@map("meal_plans")
+}
+
+model Article {
+  articleId Int @id @map("article_id") @default(autoincrement())
+  title String @db.VarChar(255)
+  content String @db.Text
+  image_path String? @db.VarChar(255)
+  author_id Int @map("author_id")
+  category String @db.VarChar(50)
+  created_at DateTime @default(now()) @map("created_at")
+  updated_at DateTime @updatedAt @map("updated_at")
+
+  author User @relation(fields: [author_id], references: [userId])
+
+  @@map("articles")
+}
