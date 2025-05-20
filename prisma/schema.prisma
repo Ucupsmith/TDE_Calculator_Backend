@@ -45,8 +45,10 @@ model User {
   reset_token        String?   @db.VarChar(25)
   reset_token_expiry DateTime? @db.DateTime()
 
-  profile   Profile?
-  mealPlans MealPlan[]
+  profile           Profile?
+  mealPlans         MealPlan[]
+  mealSelections    UserMealSelection[]
+  payments          Payment[]
 
   @@map("users")
 }
@@ -63,8 +65,9 @@ model TdeeCalculation {
   goal           Goal          @map("goal")
   tdee_result    Decimal       @map("tdee_result")
 
-  saved    SavedProfile[]
-  mealPlan MealPlan[]
+  saved            SavedProfile[]
+  mealPlan         MealPlan[]
+  mealSelections   UserMealSelection[]
 
   profile Profile @relation(fields: [profileId], references: [profileId])
 
@@ -127,7 +130,7 @@ model Admin {
 }
 
 model MealPlan {
-  mealplanId   Int     @id @default(autoincrement()) @map("meal_plans")
+  mealplanId   Int     @id @default(autoincrement()) @map("mealplan_id")
   userId       Int     @map("user_id")
   adminId      Int     @map("admin_id")
   tdeeId       Int     @map("tdee_id")
@@ -145,6 +148,7 @@ model MealPlan {
   admin           Admin           @relation(fields: [adminId], references: [adminId])
   tdeeCalculation TdeeCalculation @relation(fields: [tdeeId], references: [tdeeId])
   profile         Profile         @relation(fields: [profileId], references: [profileId])
+  payments        Payment[]
 
   @@map("meal_plans")
 }
@@ -221,4 +225,50 @@ model Article {
   author Admin @relation(fields: [author_id], references: [adminId])
 
   @@map("articles")
+}
+
+model Menu {
+  menuId        Int      @id @default(autoincrement()) @map("menu_id")
+  name          String   @db.VarChar(255)
+  calories      Int
+  description   String   @db.Text
+  category      String   @db.VarChar(50)  // breakfast, lunch, dinner, snack
+  image_path    String?  @db.VarChar(255)
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  userMealSelections UserMealSelection[]
+
+  @@map("menus")
+}
+
+model UserMealSelection {
+  selectionId   Int      @id @default(autoincrement()) @map("selection_id")
+  userId        Int      @map("user_id")
+  menuId        Int      @map("menu_id")
+  tdeeId        Int      @map("tdee_id")
+  selected_date DateTime @default(now())
+  meal_type     String   @db.VarChar(50)  // breakfast, lunch, dinner, snack
+
+  user User @relation(fields: [userId], references: [userId])
+  menu Menu @relation(fields: [menuId], references: [menuId])
+  tdeeCalculation TdeeCalculation @relation(fields: [tdeeId], references: [tdeeId])
+
+  @@map("user_meal_selections")
+}
+
+model Payment {
+  payment_id Int @id @default(autoincrement())
+  userId     Int
+  mealplanId Int?
+  amount     Decimal @db.Decimal(10, 2)
+  status     String  @default("pending") @db.VarChar(50)
+  qris_url   String? @db.VarChar(255)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  user     User     @relation(fields: [userId], references: [userId])
+  mealplan MealPlan? @relation(fields: [mealplanId], references: [mealplanId])
+
+  @@map("payments")
 }
