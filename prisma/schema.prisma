@@ -231,11 +231,12 @@ model Menu {
   menuId        Int      @id @default(autoincrement()) @map("menu_id")
   name          String   @db.VarChar(255)
   calories      Int
+  price         Decimal  @db.Decimal(10, 2)
   description   String   @db.Text
   category      String   @db.VarChar(50)  // breakfast, lunch, dinner, snack
   image_path    String?  @db.VarChar(255)
   created_at    DateTime @default(now())
-  updated_at    DateTime @updatedAt
+  updated_at    DateTime @updatedAt @map("updated_at")
 
   userMealSelections UserMealSelection[]
 
