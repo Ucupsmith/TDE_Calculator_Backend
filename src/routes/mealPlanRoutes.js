@@ -9,7 +9,9 @@ import {
   getUserMealSelections,
   addMealSelection,
   removeMealSelection,
-  addMenuByAdmin
+  addMenuByAdmin,
+  updateMenuByAdmin,
+  deleteMenuByAdmin
 } from '../controllers/MealPlanController.js';
 
 const mealPlanRoutes = express.Router();
@@ -43,5 +45,11 @@ mealPlanRoutes.delete('/selections/:selectionId', removeMealSelection);
 
 // Add menu by admin
 mealPlanRoutes.post('/menus', addMenuByAdmin);
+
+// Update menu by admin
+mealPlanRoutes.put('/menus/:menuId', updateMenuByAdmin);
+
+// Delete menu by admin
+mealPlanRoutes.delete('/menus/:menuId', deleteMenuByAdmin);
 
 export { mealPlanRoutes };

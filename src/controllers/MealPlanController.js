@@ -274,3 +274,55 @@ export const addMenuByAdmin = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
+
+// Update menu (khusus admin)
+export const updateMenuByAdmin = async (req, res) => {
+    try {
+        // (Opsi: validasi admin di sini)
+        const { menuId } = req.params;
+        const { name, calories, description, category, image_path } = req.body;
+
+        const updatedMenu = await prisma.menu.update({
+            where: {
+                menuId: parseInt(menuId)
+            },
+            data: {
+                name: name || undefined, // Gunakan undefined agar Prisma tidak mengubah field jika tidak disediakan di body
+                calories: calories ? parseInt(calories) : undefined,
+                description: description || undefined,
+                category: category || undefined,
+                image_path: image_path === null ? null : image_path || undefined // Handle case where admin wants to remove image
+            }
+        });
+
+        res.json({ message: "Menu updated successfully", menu: updatedMenu });
+
+    } catch (error) {
+        if (error.code === 'P2025') { // Error code for record not found
+            return res.status(404).json({ message: "Menu not found" });
+        }
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Delete menu (khusus admin)
+export const deleteMenuByAdmin = async (req, res) => {
+    try {
+        // (Opsi: validasi admin di sini)
+        const { menuId } = req.params;
+
+        await prisma.menu.delete({
+            where: {
+                menuId: parseInt(menuId)
+            }
+        });
+
+        res.json({ message: "Menu deleted successfully" });
+
+    } catch (error) {
+        if (error.code === 'P2025') { // Error code for record not found
+            return res.status(404).json({ message: "Menu not found" });
+        }
+        res.status(500).json({ error: error.message });
+    }
+};
