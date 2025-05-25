@@ -17,7 +17,7 @@ export const calculateTdeeOnly = (req, res) => {
   const bmi = calculateBMI(weight, height);
   const bmiCategory = getBMICategory(bmi, region || "asia");
   const bmr = calculateBMR(gender, weight, height, age);
-  const tdee = calculateTDEE(bmr, activity_level);
+  const tdee = calculateTDEE(bmr, activity_level, goal);
 
   res.json({
     bmi: bmi.toFixed(2),

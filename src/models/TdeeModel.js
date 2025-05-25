@@ -34,7 +34,7 @@ export function calculateBMR(gender, weight, height, age) {
 }
 
 // TDEE calculation (Katch-McArdle)
-export function calculateTDEE(bmr, activityLevel) {
+export function calculateTDEE(bmr, activityLevel, goal) {
   const factors = {
     sedentary: 1.2,
     slightly_active: 1.375,
@@ -42,7 +42,19 @@ export function calculateTDEE(bmr, activityLevel) {
     very_active: 1.725,
     extra_active: 1.9,
   };
-  return bmr * (factors[activityLevel] || 1.2);
+  
+  let baseTDEE = bmr * (factors[activityLevel] || 1.2);
+  
+  // Adjust TDEE based on goal
+  switch (goal) {
+    case 'LoseWeight':
+      return baseTDEE - 500; // Deficit of 500 calories for weight loss
+    case 'GainWeight':
+      return baseTDEE + 500; // Surplus of 500 calories for weight gain
+    case 'MaintainWeight':
+    default:
+      return baseTDEE; // No adjustment for maintenance
+  }
 }
 
 export const saveTdeeCalculation = async (data) => {
