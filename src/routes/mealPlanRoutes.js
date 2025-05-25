@@ -13,8 +13,18 @@ import {
   updateMenuByAdmin,
   deleteMenuByAdmin
 } from '../controllers/MealPlanController.js';
+import { validateTdeeCalculation } from "../middleware/tdeeValidation.js";
 
 const mealPlanRoutes = express.Router();
+
+// Apply TDEE validation middleware to all meal plan routes except admin routes
+mealPlanRoutes.use((req, res, next) => {
+  // Skip validation for admin routes
+  if (req.path.startsWith('/menus')) {
+    return next();
+  }
+  validateTdeeCalculation(req, res, next);
+});
 
 // Get all meal plans for a specific user
 mealPlanRoutes.get("/user/:userId", getUserMealPlans);
