@@ -58,7 +58,8 @@ export const registerUser = async (req, res) => {
       data: {
         id: newUser.userId,
         username: newUser.username,
-        email: newUser.email
+        email: newUser.email,
+        number_phone: newUser.number_phone
       }
     });
   } catch (error) {
