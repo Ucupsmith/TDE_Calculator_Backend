@@ -38,7 +38,7 @@ export const getUserId = async (req, res) => {
 };
 
 export const registerUser = async (req, res) => {
-  const { username, password, email } = req.body;
+  const { username, email, number_phone, password } = req.body;
 
   try {
     const existingUser = await getUserByEmail(email);
@@ -47,13 +47,19 @@ export const registerUser = async (req, res) => {
     }
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
-    const newUser = await createUser(username, hashedPassword, email);
+    const newUser = await createUser(
+      username,
+      email,
+      number_phone,
+      hashedPassword
+    );
     res.status(201).json({
       message: 'User Registered Successfully!',
       data: {
         id: newUser.userId,
         username: newUser.username,
-        email: newUser.email
+        email: newUser.email,
+        number_phone: newUser.number_phone
       }
     });
   } catch (error) {
