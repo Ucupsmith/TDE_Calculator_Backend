@@ -17,6 +17,7 @@ model User {
   reset_token_expiry DateTime?  @db.DateTime(0)
   mealPlans          MealPlan[]
   profile            Profile?
+  userMealSelections UserMealSelection[]
 
   @@map("users")
 }
@@ -35,6 +36,7 @@ model TdeeCalculation {
   mealPlan       MealPlan[]
   savedprofile   savedprofile[]
   profile        Profile        @relation(fields: [profileId], references: [profileId])
+  userMealSelections UserMealSelection[]
 
   @@index([profileId], map: "tdee_calculations_profile_id_fkey")
   @@map("tdee_calculations")
@@ -51,7 +53,6 @@ model Profile {
   birth_date       DateTime          @db.DateTime(0)
   birth_place      String            @db.VarChar(255)
   full_name        String            @db.VarChar(255)
-  customallergy    customallergy[]
   mealPlan         MealPlan[]
   notification     notification[]
   user             User              @relation(fields: [userId], references: [userId])
@@ -66,10 +67,9 @@ model Admin {
   email              String               @db.VarChar(255)
   password           Int
   admin_name         String               @db.VarChar(255)
-  adminnotification  adminnotification[]
-  approval           approval[]
   createnotification createnotification[]
   mealPlans          MealPlan[]
+  articles           Article[]            @relation("ArticleToAdmin")
 
   @@map("admins")
 }
@@ -100,33 +100,54 @@ model MealPlan {
   @@map("meal_plans")
 }
 
-model adminnotification {
-  notification_id   Int           @id @default(autoincrement())
-  admin_id          Int
-  custom_allergy_id Int
-  notification_date DateTime      @db.DateTime(0)
-  message           String        @db.VarChar(255)
-  admins            Admin         @relation(fields: [admin_id], references: [adminId], map: "AdminNotification_admin_id_fkey")
-  customallergy     customallergy @relation(fields: [custom_allergy_id], references: [custom_allergy_id], map: "AdminNotification_custom_allergy_id_fkey")
+model Article {
+  article_id Int      @id @default(autoincrement()) @map("article_id")
+  title      String   @db.VarChar(255)
+  content    String   @db.Text
+  image_path String?  @db.VarChar(255)
+  category   String   @db.VarChar(255)
+  author_id  Int      @map("author_id")
+  created_at DateTime @default(now()) @map("created_at")
+  updated_at DateTime @updatedAt @map("updated_at")
+  status     Status   @default(Pending)
+  views      Int      @default(0)
+  likes      Int      @default(0)
+  author     Admin    @relation("ArticleToAdmin", fields: [author_id], references: [adminId])
 
-  @@index([admin_id], map: "AdminNotification_admin_id_fkey")
-  @@index([custom_allergy_id], map: "AdminNotification_custom_allergy_id_fkey")
+  @@index([author_id], map: "articles_author_id_fkey")
+  @@map("articles")
 }
 
-model allergy {
-  allergy_id Int    @id @default(autoincrement())
-  name       String @db.VarChar(255)
+model Menu {
+  menuId             Int                 @id @default(autoincrement()) @map("menu_id")
+  name               String              @db.VarChar(255)
+  calories           Int
+  price              Decimal             @db.Decimal(10, 2)
+  description        String              @db.Text
+  category           String              @db.VarChar(50)
+  image_path         String?             @db.VarChar(255)
+  created_at         DateTime            @default(now())
+  updated_at         DateTime            @updatedAt @map("updated_at")
+  userMealSelections UserMealSelection[]
+
+  @@map("menus")
 }
 
-model approval {
-  approval_id       Int             @id @default(autoincrement())
-  admin_id          Int
-  custom_allergy_id Int             @unique(map: "Approval_custom_allergy_id_key")
-  status            approval_status
-  admins            Admin           @relation(fields: [admin_id], references: [adminId], map: "Approval_admin_id_fkey")
-  customallergy     customallergy   @relation(fields: [custom_allergy_id], references: [custom_allergy_id], map: "Approval_custom_allergy_id_fkey")
+model UserMealSelection {
+  selectionId     Int             @id @default(autoincrement()) @map("selection_id")
+  userId          Int             @map("user_id")
+  menuId          Int             @map("menu_id")
+  tdeeId          Int             @map("tdee_id")
+  selected_date   DateTime        @default(now())
+  meal_type       String          @db.VarChar(50)
+  menu            Menu            @relation(fields: [menuId], references: [menuId])
+  tdeeCalculation TdeeCalculation @relation(fields: [tdeeId], references: [tdeeId])
+  user            User            @relation(fields: [userId], references: [userId])
 
-  @@index([admin_id], map: "Approval_admin_id_fkey")
+  @@index([menuId], map: "user_meal_selections_menu_id_fkey")
+  @@index([tdeeId], map: "user_meal_selections_tdee_id_fkey")
+  @@index([userId], map: "user_meal_selections_user_id_fkey")
+  @@map("user_meal_selections")
 }
 
 model createnotification {
@@ -137,19 +158,6 @@ model createnotification {
   admins                 Admin    @relation(fields: [adminId], references: [adminId], map: "CreateNotification_adminId_fkey")
 
   @@index([adminId], map: "CreateNotification_adminId_fkey")
-}
-
-model customallergy {
-  custom_allergy_id Int                  @id @default(autoincrement())
-  profile_id        Int
-  name_alergy       String               @db.VarChar(255)
-  approval_id       Int?
-  status            customallergy_status @default(Pending)
-  adminnotification adminnotification[]
-  approval          approval?
-  profiles          Profile              @relation(fields: [profile_id], references: [profileId], map: "CustomAllergy_profile_id_fkey")
-
-  @@index([profile_id], map: "CustomAllergy_profile_id_fkey")
 }
 
 model notification {
@@ -181,6 +189,16 @@ model savedprofile {
   @@index([tdee_id], map: "SavedProfile_tdee_id_fkey")
 }
 
+model Food {
+  id        Int      @id @default(autoincrement())
+  name      String
+  calories  Int
+  unit      String
+  imageUrl  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 enum Gender {
   Male
   Female
@@ -199,18 +217,6 @@ enum Goal {
   GainWeight     @map("Gain Weight")
 }
 
-enum approval_status {
-  Pending
-  Approved
-  Rejected
-}
-
-enum customallergy_status {
-  Pending
-  Approved
-  Rejected
-}
-
 enum savedprofile_gender {
   Male
   Female
@@ -221,4 +227,10 @@ enum savedprofile_activity_level {
   SlightlyActive
   ModeratelyActive
   VeryActive
+}
+
+enum Status {
+  Pending
+  Published
+  Rejected
 }
