@@ -8,6 +8,8 @@ import { notificationRoutes } from './routes/notificationRoutes.js';
 import { articleRoutes } from './routes/articleRoutes.js';
 import foodRoutes from './routes/foodRoutes.js';
 import mealPlanRoutes from './routes/mealPlanRoutes.js';
+import { authRoutes } from './routes/authRoutes.js';  
+
 
 dotenv.config();
 const app = express();
@@ -30,7 +32,8 @@ app.use('/user/v1/tdee', tdeeRoutes);
 app.use('/user/v1/notifications', notificationRoutes);
 app.use('/user/v1/foods', foodRoutes);
 app.use('/user/v1/meal-plans', mealPlanRoutes);
-
+app.use('/user/v1/TDEE-calculator', tdeeRoutes);
+app.use('/user/v1/auth', authRoutes);
 
 // Serve static files from the "public" directory
 app.use(express.static('src/public'));
@@ -38,9 +41,9 @@ app.use(express.static('src/public'));
 // Error handler middleware (should come after routes)
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(500).json({ 
-    success: false, 
-    message: 'Something went wrong!' 
+  res.status(500).json({
+    success: false,
+    message: 'Something went wrong!'
   });
 });
 
