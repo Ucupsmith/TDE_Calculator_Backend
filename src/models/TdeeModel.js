@@ -1,4 +1,4 @@
-import prisma from "../../prisma/prismaClient.js";
+import prisma from '../../prisma/prismaClient.js';
 
 // BMI calculation
 export function calculateBMI(weight, height) {
@@ -27,9 +27,9 @@ export function getBMICategory(bmi, region = 'asia') {
 // BMR calculation (Harris-Benedict)
 export function calculateBMR(gender, weight, height, age) {
   if (gender === 'male') {
-    return 88.362 + (13.397 * weight) + (4.799 * height) - (5.677 * age);
+    return 88.362 + 13.397 * weight + 4.799 * height - 5.677 * age;
   } else {
-    return 447.593 + (9.247 * weight) + (3.098 * height) - (4.330 * age);
+    return 447.593 + 9.247 * weight + 3.098 * height - 4.33 * age;
   }
 }
 
@@ -40,11 +40,11 @@ export function calculateTDEE(bmr, activityLevel, goal) {
     slightly_active: 1.375,
     moderately_active: 1.55,
     very_active: 1.725,
-    extra_active: 1.9,
+    extra_active: 1.9
   };
-  
+
   let baseTDEE = bmr * (factors[activityLevel] || 1.2);
-  
+
   // Adjust TDEE based on goal
   switch (goal) {
     case 'LoseWeight':
@@ -60,7 +60,7 @@ export function calculateTDEE(bmr, activityLevel, goal) {
 export const saveTdeeCalculation = async (data) => {
   return await prisma.tdeeCalculation.create({
     data: {
-      profileId: data.profileId,
+      userId: data.userId,
       gender: data.gender,
       weight: data.weight,
       height: data.height,
@@ -68,13 +68,13 @@ export const saveTdeeCalculation = async (data) => {
       activity_level: data.activity_level,
       goal: data.goal,
       tdee_result: data.tdee_result,
-      saved_id: data.saved_id !== undefined ? data.saved_id : 0
-    },
+      saved_id: data.saved_id ?? 0
+    }
   });
 };
 
 export const getTdeeByProfileId = async (profileId) => {
   return await prisma.tdeeCalculation.findMany({
-    where: { profileId: profileId },
+    where: { profileId: profileId }
   });
-}; 
+};

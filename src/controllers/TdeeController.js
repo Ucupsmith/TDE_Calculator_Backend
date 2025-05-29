@@ -4,18 +4,19 @@ import {
   calculateBMR,
   calculateTDEE,
   saveTdeeCalculation,
-  getTdeeByProfileId,
-} from "../models/TdeeModel.js";
-import prisma from "../../prisma/prismaClient.js";
+  getTdeeByProfileId
+} from '../models/TdeeModel.js';
+import prisma from '../../prisma/prismaClient.js';
 
 // Hitung TDEE tanpa save
 export const calculateTdeeOnly = (req, res) => {
-  const { gender, weight, height, age, activity_level, region, goal } = req.body;
+  const { gender, weight, height, age, activity_level, region, goal } =
+    req.body;
   if (!gender || !weight || !height || !age || !activity_level || !goal) {
-    return res.status(400).json({ message: "Missing required fields" });
+    return res.status(400).json({ message: 'Missing required fields' });
   }
   const bmi = calculateBMI(weight, height);
-  const bmiCategory = getBMICategory(bmi, region || "asia");
+  const bmiCategory = getBMICategory(bmi, region || 'asia');
   const bmr = calculateBMR(gender, weight, height, age);
   const tdee = calculateTDEE(bmr, activity_level, goal);
 
@@ -30,14 +31,44 @@ export const calculateTdeeOnly = (req, res) => {
 
 // Save hasil perhitungan ke database
 export const saveTdeeCalculationController = async (req, res) => {
-  const { profileId, gender, weight, height, age, activity_level, goal, tdee_result, saved_id } = req.body;
-  if (!profileId || !gender || !weight || !height || !age || !activity_level || !goal || !tdee_result) {
-    return res.status(400).json({ message: "Missing required fields" });
+  const {
+    userId, // 🔧 ambil dari frontend, atau dari session server-side
+    gender,
+    weight,
+    height,
+    age,
+    activity_level,
+    goal,
+    tdee_result,
+    saved_id
+  } = req.body;
+
+  if (
+    !userId ||
+    !gender ||
+    !weight ||
+    !height ||
+    !age ||
+    !activity_level ||
+    !goal ||
+    !tdee_result
+  ) {
+    return res.status(400).json({ message: 'Missing required fields' });
   }
+
   try {
+    const profile = await prisma.profile.findFirst({
+      where: { userId },
+      select: { profileId: true }
+    });
+
+    if (!profile) {
+      return res.status(404).json({ message: 'Profile not found for user' });
+    }
+
     const saved = await prisma.tdeeCalculation.create({
       data: {
-        profileId,
+        profileId: profile.profileId,
         gender,
         weight,
         height,
@@ -45,12 +76,92 @@ export const saveTdeeCalculationController = async (req, res) => {
         activity_level,
         goal,
         tdee_result,
-        saved_id: saved_id !== undefined ? saved_id : 0
+        saved_id: saved_id ?? 0
       }
     });
-    res.status(201).json({ message: "TDEE calculation saved", saved });
+
+    return res.status(201).json({ message: 'TDEE calculation saved', saved });
   } catch (error) {
-    res.status(500).json({ message: "Error saving TDEE calculation", error: error.message });
+    return res.status(500).json({
+      message: 'Error saving TDEE calculation',
+      error: error.message
+    });
+  }
+};
+
+export const saveTdeeToHomeController = async (req, res) => {
+  const {
+    userId,
+    gender,
+    weight,
+    height,
+    age,
+    activity_level,
+    goal,
+    tdee_result,
+    saved_id
+  } = req.body;
+
+  if (
+    !userId ||
+    !gender ||
+    !weight ||
+    !height ||
+    !age ||
+    !activity_level ||
+    !goal ||
+    !tdee_result
+  ) {
+    return res.status(400).json({ message: 'Missing required fields' });
+  }
+
+  try {
+    const saved = await prisma.tdeeCalculation.create({
+      data: {
+        userId,
+        gender,
+        weight,
+        height,
+        age,
+        activity_level,
+        goal,
+        tdee_result,
+        saved_id: saved_id ?? 0
+      }
+    });
+
+    return res.status(201).json({ message: 'TDEE saved successfully', saved });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ message: 'Failed to save TDEE', error: error.message });
+  }
+};
+
+export const getLastTdeeController = async (req, res) => {
+  const { userId } = req.query;
+
+  if (!userId) {
+    return res.status(400).json({ message: 'User ID is required' });
+  }
+
+  try {
+    const lastTdee = await prisma.tdeeCalculation.findFirst({
+      where: { userId: Number(userId) },
+      orderBy: { tdeeId: 'desc' } // ambil yang terbaru
+    });
+
+    if (!lastTdee) {
+      return res
+        .status(404)
+        .json({ message: 'No TDEE calculation found for this user' });
+    }
+
+    return res.status(200).json({ tdee: lastTdee.tdee_result });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ message: 'Failed to fetch TDEE', error: error.message });
   }
 };
 
@@ -60,7 +171,9 @@ export const getTdeeHistory = async (req, res) => {
     const history = await getTdeeByProfileId(Number(profileId));
     res.json(history);
   } catch (error) {
-    res.status(500).json({ message: "Error fetching TDEE history", error: error.message });
+    res
+      .status(500)
+      .json({ message: 'Error fetching TDEE history', error: error.message });
   }
 };
 
@@ -68,17 +181,19 @@ export const getLatestTdeeResultByProfile = async (req, res) => {
   try {
     const { profileId } = req.query;
     if (!profileId) {
-      return res.status(400).json({ message: "profileId is required" });
+      return res.status(400).json({ message: 'profileId is required' });
     }
     const latest = await prisma.tdeeCalculation.findFirst({
       where: { profileId: Number(profileId) },
       orderBy: { createdAt: 'desc' }
     });
     if (!latest) {
-      return res.status(404).json({ message: "No TDEE result found" });
+      return res.status(404).json({ message: 'No TDEE result found' });
     }
     res.json({ tdee: latest.tdee_result, lastCalculated: latest.createdAt });
   } catch (error) {
-    res.status(500).json({ message: "Error fetching TDEE result", error: error.message });
+    res
+      .status(500)
+      .json({ message: 'Error fetching TDEE result', error: error.message });
   }
-}; 
+};

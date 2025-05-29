@@ -72,11 +72,11 @@ export const login = async (req, res) => {
   try {
     const user = await getUserByEmail(email);
     if (!user) {
-      res.status(400).json({ message: 'Invalid Credentials' });
+      return res.status(400).json({ message: 'Invalid Credentials' });
     }
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      res.status(400).json({ message: 'Invalid Credentials' });
+      return res.status(400).json({ message: 'Invalid Credentials' });
     }
     const token = jwt.sign(
       {
@@ -86,7 +86,7 @@ export const login = async (req, res) => {
       JWT_SECRET,
       { expiresIn: '1h' }
     );
-    res.json({
+    return res.json({
       message: 'Logged in successfully',
       token,
       data: {
@@ -96,6 +96,6 @@ export const login = async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    return res.status(500).json({ message: 'Server error' });
   }
 };
