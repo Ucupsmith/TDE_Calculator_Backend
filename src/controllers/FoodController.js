@@ -8,7 +8,28 @@ import {
 // Get all available foods
 export const getAllFoodsController = (req, res) => {
   try {
-    const foods = getAllFoods();
+    const goal = req.query.goal; // 'lose' atau 'gain'
+    let foods = getAllFoods();
+    if (goal === 'lose' || goal === 'gain' || goal === 'maintain') {
+      foods = foods.map(food => {
+        if (food.name === 'nasi' || food.name === 'nasi merah') {
+          if (goal === 'lose') {
+            return {
+              ...food,
+              unit: '1/2 porsi',
+              calories: Math.round(food.calories / 2)
+            };
+          } else if (goal === 'gain' || goal === 'maintain') {
+            return {
+              ...food,
+              unit: '1 porsi',
+              calories: food.calories
+            };
+          }
+        }
+        return food;
+      });
+    }
     res.json(foods);
   } catch (error) {
     res.status(500).json({ message: "Error fetching foods", error: error.message });

@@ -1,4 +1,5 @@
-import prisma from "../../prisma/prismaClient.js";
+import { PrismaClient } from '@prisma/client';
+const prisma = new PrismaClient();
 
 const foodData = [
   { name: "alpukat", calories: 322, unit: "1 buah", imageUrl: "/images/alpukat_utuh.png" },
@@ -57,7 +58,7 @@ const foodData = [
   { name: "mangga", calories: 135, unit: "1 buahh", imageUrl: "/images/mangga.png" },
   { name: "melon", calories: 60, unit: "1 porsi", imageUrl: "/images/melon.png" },
   { name: "nanas", calories: 74, unit: "1 porsi", imageUrl: "/images/nanas.png" },
-  { name: "nasi", calories: 129, unit: "1 porsi", loseWeightUnit: "1/2 porsi", loseWeightCalories: 65, imageUrl: "/images/nasi.png" },
+  { name: "nasi", calories: 129, unit: "1 porsi", imageUrl: "/images/nasi.png" },
   { name: "nasi goreng", calories: 250, unit: "1 porsi", imageUrl: "/images/nasi_goreng.png" },
   { name: "nasi merah", calories: 110, unit: "1 porsi", imageUrl: "/images/nasi_merah.png" },
   { name: "oatmeal", calories: 97, unit: "1 porsi", imageUrl: "/images/oatmeal.png" },
@@ -112,45 +113,27 @@ const foodData = [
   { name: "wortel", calories: 41, unit: "1 porsi", imageUrl: "/images/wortel.png" }
 ];
 
-export const getAllFoods = () => {
-  return foodData;
-};
-
-export const getFoodByName = (name) => {
-  return foodData.find(food => food.name.toLowerCase() === name.toLowerCase());
-};
-
-export const calculateTotalCalories = (selectedFoods, goal) => {
-  return selectedFoods.reduce((total, food) => {
-    const foodData = getFoodByName(food.name);
-    if (!foodData) return total;
-
-    // Special handling for rice based on goal
-    if (food.name.toLowerCase() === "nasi" && goal === "LoseWeight") {
-      return total + foodData.loseWeightCalories;
-    }
-
-    return total + foodData.calories;
-  }, 0);
-};
-
-export const calculateRemainingCalories = (tdee, selectedFoods, goal) => {
-  const totalCalories = calculateTotalCalories(selectedFoods, goal);
-  return tdee - totalCalories;
-};
-
-// Helper function to get food details with correct portion based on goal
-export const getFoodDetails = (foodName, goal) => {
-  const food = getFoodByName(foodName);
-  if (!food) return null;
-
-  if ((foodName.toLowerCase() === "nasi" || foodName.toLowerCase() === "nasi merah") && goal === "LoseWeight") {
-    return {
-      ...food,
-      unit: "1/2 porsi",
-      calories: Math.round(food.calories / 2)
-    };
+async function main() {
+  console.log('Start seeding...');
+  
+  // Delete existing data
+  await prisma.food.deleteMany();
+  
+  // Insert new data
+  for (const food of foodData) {
+    await prisma.food.create({
+      data: food
+    });
   }
+  
+  console.log('Seeding finished.');
+}
 
-  return food;
-}; 
+main()
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  }); 

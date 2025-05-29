@@ -31,6 +31,10 @@ app.use('/user/v1/notifications', notificationRoutes);
 app.use('/user/v1/foods', foodRoutes);
 app.use('/user/v1/meal-plans', mealPlanRoutes);
 
+
+// Serve static files from the "public" directory
+app.use(express.static('src/public'));
+
 // Error handler middleware (should come after routes)
 app.use((err, req, res, next) => {
   console.error(err.stack);
