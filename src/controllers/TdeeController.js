@@ -4,7 +4,8 @@ import {
   calculateBMR,
   calculateTDEE,
   saveTdeeCalculation,
-  getTdeeByProfileId
+  getTdeeByProfileId,
+  getLastTdeeCalculation
 } from '../models/TdeeModel.js';
 import prisma from '../../prisma/prismaClient.js';
 
@@ -146,10 +147,7 @@ export const getLastTdeeController = async (req, res) => {
   }
 
   try {
-    const lastTdee = await prisma.tdeeCalculation.findFirst({
-      where: { userId: Number(userId) },
-      orderBy: { tdeeId: 'desc' } // ambil yang terbaru
-    });
+    const lastTdee = await getLastTdeeCalculation(userId);
 
     if (!lastTdee) {
       return res
@@ -157,14 +155,18 @@ export const getLastTdeeController = async (req, res) => {
         .json({ message: 'No TDEE calculation found for this user' });
     }
 
-    return res.status(200).json({ tdee: lastTdee.tdee_result });
+    return res.status(200).json({
+      tdeeId: lastTdee.tdeeId,
+      tdee: lastTdee.tdee_result,
+      createdAt: lastTdee.createdAt,
+      lastCalculated: lastTdee.createdAt // alias jika kamu ingin field ini
+    });
   } catch (error) {
     return res
       .status(500)
       .json({ message: 'Failed to fetch TDEE', error: error.message });
   }
 };
-
 export const getTdeeHistory = async (req, res) => {
   try {
     const { profileId } = req.params;

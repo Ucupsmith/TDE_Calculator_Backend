@@ -1,5 +1,5 @@
-import db from "../config/db.js";
-import prisma from "../../prisma/prismaClient.js";
+import db from '../config/db.js';
+import prisma from '../../prisma/prismaClient.js';
 
 const validateProfileData = (data) => {
   const requiredFields = ['full_name', 'birth_place', 'birth_date', 'address', 'phone_number', 'email', 'gender'];
@@ -31,8 +31,8 @@ const validateProfileData = (data) => {
 export const getProfile = async () => {
   return await prisma.profile.findMany({
     select: {
-      userId: true,
-    },
+      userId: true
+    }
   });
 };
 

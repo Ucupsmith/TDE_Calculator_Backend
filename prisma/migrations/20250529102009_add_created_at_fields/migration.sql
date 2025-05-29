@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE `tdee_calculations` ADD COLUMN `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3);
