@@ -34,6 +34,7 @@ model TdeeCalculation {
   height         Decimal       @db.Decimal(8, 2)
   saved_id       Int           @map("saved_id")
   weight         Decimal       @db.Decimal(8, 2)
+  createdAt      DateTime  @default(now()) @map("created_at")
 
   user               User                @relation(fields: [userId], references: [userId])
   mealPlan           MealPlan[]

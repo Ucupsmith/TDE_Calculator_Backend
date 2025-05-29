@@ -73,6 +73,13 @@ export const saveTdeeCalculation = async (data) => {
   });
 };
 
+export const getLastTdeeCalculation = async (userId) => {
+  return await prisma.tdeeCalculation.findFirst({
+    where: { userId: Number(userId) },
+    orderBy: { tdeeId: 'desc' } // paling terbaru
+  });
+};
+
 export const getTdeeByProfileId = async (profileId) => {
   return await prisma.tdeeCalculation.findMany({
     where: { profileId: profileId }

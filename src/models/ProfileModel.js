@@ -1,17 +1,17 @@
-import db from "../config/db.js";
-import prisma from "../../prisma/prismaClient.js";
+import db from '../config/db.js';
+import prisma from '../../prisma/prismaClient.js';
 
 export const getProfile = async () => {
   return await prisma.profile.findMany({
     select: {
-      userId: true,
-    },
+      userId: true
+    }
   });
 };
 
 export const getProfileByUserId = async (userId) => {
   return await prisma.profile.findUnique({
-    where: { profileId: userId },
+    where: { profileId: userId }
   });
 };
 
@@ -28,8 +28,8 @@ export const createProfile = async (
       gender,
       weight,
       height,
-      activityLevel,
-    },
+      activityLevel
+    }
   });
 };
 
@@ -45,8 +45,8 @@ export const updateProfile = async (userId, profileData) => {
         phone_number: profileData.phone_number,
         email: profileData.email,
         gender: profileData.gender,
-        avatar: profileData.avatar,
-      },
+        avatar: profileData.avatar
+      }
     });
     return updatedProfile();
   } catch (error) {
