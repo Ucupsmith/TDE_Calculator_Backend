@@ -3,12 +3,10 @@ import {
   calculateTdeeOnly,
   saveTdeeCalculationController,
   getTdeeHistory,
-  getLatestTdeeResultByProfile
+  getLatestTdeeResultByProfile,
+  saveTdeeToHomeController,
+  getLastTdeeController
 } from '../controllers/TdeeController.js';
-import {
-  getLastTdeeController,
-  saveTdeeToHomeController
-} from '../models/TdeeModel.js';
 
 const tdeeRoutes = express.Router();
 
