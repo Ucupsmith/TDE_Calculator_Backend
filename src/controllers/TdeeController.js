@@ -54,10 +54,22 @@ export const saveTdeeCalculationController = async (req, res) => {
   ) {
     return res.status(400).json({ message: 'Missing required fields' });
   }
+
+  const profile = await prisma.profile.findFirst({
+    where: {
+      userId: data.userId // kirim userId dari frontend
+    },
+    select: {
+      profileId: true
+    }
+  });
+
+  if (!profile) throw new Error('Profile not found for user');
+
   try {
     const saved = await prisma.tdeeCalculation.create({
       data: {
-        profileId,
+        profileId: profile.profileId,
         gender,
         weight,
         height,
