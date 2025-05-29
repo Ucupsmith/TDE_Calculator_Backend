@@ -58,20 +58,9 @@ export function calculateTDEE(bmr, activityLevel, goal) {
 }
 
 export const saveTdeeCalculation = async (data) => {
-  const profile = await prisma.profile.findFirst({
-    where: {
-      userId: data.userId
-    },
-    select: {
-      profileId: true
-    }
-  });
-
-  if (!profile) throw new Error('Profile not found for user');
-
   return await prisma.tdeeCalculation.create({
     data: {
-      profileId: profile.profileId,
+      userId: data.userId,
       gender: data.gender,
       weight: data.weight,
       height: data.height,
