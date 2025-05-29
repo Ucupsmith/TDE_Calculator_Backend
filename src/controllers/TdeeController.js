@@ -32,7 +32,7 @@ export const calculateTdeeOnly = (req, res) => {
 // Save hasil perhitungan ke database
 export const saveTdeeCalculationController = async (req, res) => {
   const {
-    profileId,
+    userId, // 🔧 ambil dari frontend, atau dari session server-side
     gender,
     weight,
     height,
@@ -42,31 +42,30 @@ export const saveTdeeCalculationController = async (req, res) => {
     tdee_result,
     saved_id
   } = req.body;
+
   if (
-    (profileId === null || profileId === undefined,
+    !userId ||
     !gender ||
-      !weight ||
-      !height ||
-      !age ||
-      !activity_level ||
-      !goal ||
-      !tdee_result)
+    !weight ||
+    !height ||
+    !age ||
+    !activity_level ||
+    !goal ||
+    !tdee_result
   ) {
     return res.status(400).json({ message: 'Missing required fields' });
   }
 
-  const profile = await prisma.profile.findFirst({
-    where: {
-      userId: data.userId // kirim userId dari frontend
-    },
-    select: {
-      profileId: true
-    }
-  });
-
-  if (!profile) throw new Error('Profile not found for user');
-
   try {
+    const profile = await prisma.profile.findFirst({
+      where: { userId },
+      select: { profileId: true }
+    });
+
+    if (!profile) {
+      return res.status(404).json({ message: 'Profile not found for user' });
+    }
+
     const saved = await prisma.tdeeCalculation.create({
       data: {
         profileId: profile.profileId,
@@ -77,14 +76,16 @@ export const saveTdeeCalculationController = async (req, res) => {
         activity_level,
         goal,
         tdee_result,
-        saved_id: saved_id !== undefined ? saved_id : 0
+        saved_id: saved_id ?? 0
       }
     });
-    res.status(201).json({ message: 'TDEE calculation saved', saved });
+
+    return res.status(201).json({ message: 'TDEE calculation saved', saved });
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: 'Error saving TDEE calculation', error: error.message });
+    return res.status(500).json({
+      message: 'Error saving TDEE calculation',
+      error: error.message
+    });
   }
 };
 
