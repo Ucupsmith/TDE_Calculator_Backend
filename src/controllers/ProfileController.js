@@ -6,61 +6,82 @@ import {
 
 const getProfile = async (req, res) => {
   try {
-    const profile = await getProfileByUserId(req.params.id);
-    if (!profile) return res.status(404).json({ message: "Profile not found" });
-    res.json(profile);
+    const userId = req.user.userId; // Assuming you have authentication middleware
+    const profile = await getProfileByUserId(userId);
+    
+    if (!profile) {
+      return res.status(404).json({ 
+        status: "error",
+        message: "Profile not found" 
+      });
+    }
+
+    res.json({
+      status: "success",
+      data: profile
+    });
   } catch (error) {
-    res.status(500).json({ message: "Error retrieving profile" });
+    res.status(500).json({ 
+      status: "error",
+      message: error.message || "Error retrieving profile" 
+    });
   }
 };
 
 const createuserProfile = async (req, res) => {
   try {
-    const { user_id, gender, weight, height, activity_level } = req.body;
-    const profileId = await createProfile(
-      user_id,
-      gender,
-      weight,
-      height,
-      activity_level
-    );
-    res.status(201).json({ message: "Profile created", profileId });
+    const userId = req.user.userId; // Assuming you have authentication middleware
+    const profileData = {
+      full_name: req.body.full_name,
+      birth_place: req.body.birth_place,
+      birth_date: req.body.birth_date,
+      address: req.body.address,
+      phone_number: req.body.phone_number,
+      email: req.body.email,
+      gender: req.body.gender,
+      avatar: req.body.avatar
+    };
+
+    const profile = await createProfile(userId, profileData);
+    
+    res.status(201).json({
+      status: "success",
+      message: "Profile created successfully",
+      data: profile
+    });
   } catch (error) {
-    res.status(500).json({ message: "Error creating profile" });
+    res.status(500).json({
+      status: "error",
+      message: error.message || "Error creating profile"
+    });
   }
 };
 
 const updatedProfile = async (req, res) => {
-  const userId = parseInt(req.params.userId);
-  const {
-    full_name,
-    birth_place,
-    birth_date,
-    address,
-    phone_number,
-    email,
-    gender,
-    avatar_url,
-  } = req.body;
   try {
-    const updatesProfile = await updateProfile(userId, {
-      full_name,
-      birth_place,
-      birth_date,
-      address,
-      phone_number,
-      email,
-      gender,
-      avatar_url,
-    });
+    const userId = req.user.userId; // Assuming you have authentication middleware
+    const profileData = {
+      full_name: req.body.full_name,
+      birth_place: req.body.birth_place,
+      birth_date: req.body.birth_date,
+      address: req.body.address,
+      phone_number: req.body.phone_number,
+      email: req.body.email,
+      gender: req.body.gender,
+      avatar: req.body.avatar
+    };
+
+    const updatedProfile = await updateProfile(userId, profileData);
+    
     return res.status(200).json({
+      status: "success",
       message: "Profile updated successfully",
-      data: updatesProfile,
+      data: updatedProfile
     });
   } catch (error) {
     return res.status(500).json({
-      message: "Failed to update profile",
-      error: error.message,
+      status: "error",
+      message: error.message || "Failed to update profile"
     });
   }
 };
