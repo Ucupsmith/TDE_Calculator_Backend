@@ -37,9 +37,17 @@ export const createUser = async (
 };
 
 export const getUserByEmail = async (email) => {
-  return await prisma.user.findUnique({
-    where: email
-  });
+  try {
+    // log email yang dicari
+    console.log('Mencari user dengan email:', email);
+    return await prisma.user.findFirst({
+      where: { email }
+    });
+    // ...query ke database
+  } catch (err) {
+    console.error('Error in getUserByEmail:', err);
+    throw err; // biar error-nya naik ke controller
+  }
 };
 
 export const updateUser = async (newUsername, newEmail, newPassword) => {
