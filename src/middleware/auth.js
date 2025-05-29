@@ -16,6 +16,7 @@ export const authenticateToken = (req, res, next) => {
     req.user = decoded;
     next();
   } catch (error) {
+    console.error('Error in authenticateToken middleware:', error.message);
     return res.status(403).json({ 
       status: "error",
       message: "Invalid token." 

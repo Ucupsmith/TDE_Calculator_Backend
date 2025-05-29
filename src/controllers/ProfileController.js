@@ -6,7 +6,8 @@ import {
 
 const getProfile = async (req, res) => {
   try {
-    const userId = req.user.userId; // Assuming you have authentication middleware
+    const userId = req.user.id; // Menggunakan req.user.id sesuai claim token
+    console.log('Fetching profile for userId:', userId);
     const profile = await getProfileByUserId(userId);
     
     if (!profile) {

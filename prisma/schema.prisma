@@ -10,13 +10,13 @@ datasource db {
 model User {
   userId             Int                 @id @default(autoincrement()) @map("user_id")
   username           String              @db.VarChar(255)
-  email              String              @db.VarChar(255)
-  number_phone       String              @db.VarChar(20)
   password           String              @db.VarChar(255)
+  email              String              @db.VarChar(255)
   reset_token        String?             @db.VarChar(25)
   reset_token_expiry DateTime?           @db.DateTime(0)
-  tdeeCalculations   TdeeCalculation[]
+  number_phone       String              @db.VarChar(20)
   mealPlans          MealPlan[]
+  tdeeCalculations   TdeeCalculation[]
   profile            Profile?
   userMealSelections UserMealSelection[]
 
@@ -45,32 +45,32 @@ model TdeeCalculation {
 }
 
 model Profile {
-  profileId    Int            @id @default(autoincrement()) @map("profile_id")
-  userId       Int            @unique @map("user_id")
-  gender       Gender
-  address      String         @db.VarChar(255)
-  avatar       String?
-  email        String         @db.VarChar(255)
-  phone_number String         @db.VarChar(12)
-  birth_date   DateTime       @db.DateTime(0)
-  birth_place  String         @db.VarChar(255)
-  full_name    String         @db.VarChar(255)
-  mealPlan     MealPlan[]
-  notification notification[]
-  user         User           @relation(fields: [userId], references: [userId])
-  savedprofile savedprofile[]
+  profileId         Int               @id @default(autoincrement()) @map("profile_id")
+  userId            Int               @unique @map("user_id")
+  full_name         String            @db.VarChar(255)
+  birth_date        DateTime          @db.DateTime(0)
+  birth_place       String            @db.VarChar(255)
+  address           String            @db.VarChar(255)
+  phone_number      String            @db.VarChar(12)
+  email             String            @db.VarChar(255)
+  avatar            String?
+  gender            Gender
+  mealPlan          MealPlan[]
+  notification      notification[]
+  user              User              @relation(fields: [userId], references: [userId])
+  savedprofile      savedprofile[]
 
   @@map("profiles")
 }
 
 model Admin {
   adminId            Int                  @id @default(autoincrement()) @map("admin_id")
+  admin_name         String               @db.VarChar(255)
   email              String               @db.VarChar(255)
   password           Int
-  admin_name         String               @db.VarChar(255)
+  articles           Article[]            @relation("ArticleToAdmin")
   createnotification createnotification[]
   mealPlans          MealPlan[]
-  articles           Article[]            @relation("ArticleToAdmin")
 
   @@map("admins")
 }
@@ -78,17 +78,17 @@ model Admin {
 model MealPlan {
   userId          Int             @map("user_id")
   adminId         Int             @map("admin_id")
+  tdeeId          Int             @map("tdee_id")
+  profileId       Int             @map("profile_id")
   goal            Goal            @map("goal")
   meal_detail     String?         @map("meal_details")
-  meal_plans      Int             @id @default(autoincrement())
   breakfast       String          @db.VarChar(255)
-  dinner          String          @db.VarChar(255)
   lunch           String          @db.VarChar(255)
+  dinner          String          @db.VarChar(255)
   vegan           String          @db.VarChar(255)
   glutten_free    String          @db.VarChar(255)
   low_carb        String          @db.VarChar(255)
-  profileId       Int             @map("profile_id")
-  tdeeId          Int             @map("tdee_id")
+  meal_plans      Int             @id @default(autoincrement())
   admin           Admin           @relation(fields: [adminId], references: [adminId])
   profile         Profile         @relation(fields: [profileId], references: [profileId])
   tdeeCalculation TdeeCalculation @relation(fields: [tdeeId], references: [tdeeId])
@@ -190,14 +190,14 @@ model savedprofile {
   @@index([tdee_id], map: "SavedProfile_tdee_id_fkey")
 }
 
-model Food {
+model food {
   id        Int      @id @default(autoincrement())
   name      String
   calories  Int
   unit      String
   imageUrl  String
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  updatedAt DateTime
 }
 
 enum Gender {

@@ -19,6 +19,18 @@ const PORT = process.env.PORT || 8000;
 app.use(express.json());
 app.use(cors());
 
+// --- Middleware Penanganan Error Umum --- //
+app.use((err, req, res, next) => {
+  console.error('Unhandled Backend Error:', err.stack); // Log error ke console backend
+  res.status(500).json({
+    status: 'error',
+    message: 'An unexpected error occurred on the server.',
+    // Di lingkungan produksi, hindari mengirim detail error sensitif ke klien
+    // Untuk debugging lokal, bisa disertakan: error: err.message
+  });
+});
+// --- Akhir Middleware Penanganan Error Umum --- //
+
 // Root route
 app.get('/', (req, res) => {
   res.status(200).send('welcome to TDEE calculator API');
@@ -32,20 +44,10 @@ app.use('/user/v1/tdee', tdeeRoutes);
 app.use('/user/v1/notifications', notificationRoutes);
 app.use('/user/v1/foods', foodRoutes);
 app.use('/user/v1/meal-plans', mealPlanRoutes);
-app.use('/user/v1/TDEE-calculator', tdeeRoutes);
 app.use('/user/v1/auth', authRoutes);
 
 // Serve static files from the "public" directory
 app.use(express.static('src/public'));
-
-// Error handler middleware (should come after routes)
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({
-    success: false,
-    message: 'Something went wrong!'
-  });
-});
 
 app.listen(PORT, () => {
   console.log(`server is running on port: ${PORT}`);
