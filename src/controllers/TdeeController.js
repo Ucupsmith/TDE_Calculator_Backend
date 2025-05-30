@@ -91,51 +91,39 @@ export const saveTdeeCalculationController = async (req, res) => {
 };
 
 export const saveTdeeToHomeController = async (req, res) => {
-  const {
-    userId,
-    gender,
-    weight,
-    height,
-    age,
-    activity_level,
-    goal,
-    tdee_result,
-    saved_id
-  } = req.body;
+  const { tdee_result } = req.body;
+  const userId = req.user.id;
 
-  if (
-    !userId ||
-    !gender ||
-    !weight ||
-    !height ||
-    !age ||
-    !activity_level ||
-    !goal ||
-    !tdee_result
-  ) {
-    return res.status(400).json({ message: 'Missing required fields' });
+  if (!userId || !tdee_result) {
+    return res.status(400).json({ message: 'Missing required fields: userId or tdee_result' });
   }
 
   try {
     const saved = await prisma.tdeeCalculation.create({
       data: {
-        userId,
-        gender,
-        weight,
-        height,
-        age,
-        activity_level,
-        goal,
-        tdee_result,
-        saved_id: saved_id ?? 0
+        userId: userId,
+        tdee_result: parseFloat(tdee_result),
+        goal: "MaintainWeight",
+        activity_level: "Sedentary",
+        age: 0,
+        height: 0,
+        weight: 0,
+        saved_id: 0
       }
     });
 
-    return res.status(201).json({ message: 'TDEE saved successfully', saved });
+    const responseData = {
+      id: saved.tdeeId,
+      tdee_result: saved.tdee_result,
+      calculation_date: saved.createdAt
+    };
+
+    return res.status(201).json({ message: 'TDEE saved successfully for homepage', data: responseData });
   } catch (error) {
+    console.error('Failed to save TDEE for homepage:', error);
     return res
       .status(500)
-      .json({ message: 'Failed to save TDEE', error: error.message });
+      .json({ message: 'Failed to save TDEE for homepage', error: error.message });
   }
 };
 
@@ -159,7 +147,7 @@ export const getLastTdeeController = async (req, res) => {
       tdeeId: lastTdee.tdeeId,
       tdee: lastTdee.tdee_result,
       createdAt: lastTdee.createdAt,
-      lastCalculated: lastTdee.createdAt // alias jika kamu ingin field ini
+      lastCalculated: lastTdee.createdAt
     });
   } catch (error) {
     return res
@@ -167,6 +155,7 @@ export const getLastTdeeController = async (req, res) => {
       .json({ message: 'Failed to fetch TDEE', error: error.message });
   }
 };
+
 export const getTdeeHistory = async (req, res) => {
   try {
     const { profileId } = req.params;
@@ -197,5 +186,40 @@ export const getLatestTdeeResultByProfile = async (req, res) => {
     res
       .status(500)
       .json({ message: 'Error fetching TDEE result', error: error.message });
+  }
+};
+
+export const getTdeeHistoryForHome = async (req, res) => {
+  const userId = req.user.id;
+
+  if (!userId) {
+    return res.status(401).json({ message: 'User not authenticated' });
+  }
+
+  try {
+    const history = await prisma.tdeeCalculation.findMany({
+      where: {
+        userId: userId,
+      },
+      orderBy: {
+        createdAt: 'asc',
+      },
+      select: {
+        tdee_result: true,
+        createdAt: true,
+      },
+    });
+
+    const formattedHistory = history.map(item => ({
+      tdee_result: item.tdee_result,
+      calculation_date: item.createdAt
+    }));
+
+    return res.status(200).json(formattedHistory);
+  } catch (error) {
+    console.error('Failed to fetch TDEE history for homepage:', error);
+    return res
+      .status(500)
+      .json({ message: 'Failed to fetch TDEE history for homepage', error: error.message });
   }
 };
