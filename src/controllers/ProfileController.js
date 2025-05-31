@@ -11,6 +11,7 @@ const getProfile = async (req, res) => {
     const profile = await getProfileByUserId(userId);
     
     if (!profile) {
+      console.warn('Profile not found for userId:', userId);
       return res.status(404).json({ 
         status: "error",
         message: "Profile not found" 
@@ -22,9 +23,11 @@ const getProfile = async (req, res) => {
       data: profile
     });
   } catch (error) {
+    console.error('Error in getProfile controller:', error);
     res.status(500).json({ 
       status: "error",
-      message: error.message || "Error retrieving profile" 
+      message: "Error retrieving profile",
+      error: error.message
     });
   }
 };
@@ -60,7 +63,7 @@ const createuserProfile = async (req, res) => {
 
 const updatedProfile = async (req, res) => {
   try {
-    const userId = req.user.userId; // Assuming you have authentication middleware
+    const userId = req.user.id; // Mengubah dari req.user.userId menjadi req.user.id
     const profileData = {
       full_name: req.body.full_name,
       birth_place: req.body.birth_place,

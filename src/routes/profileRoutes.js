@@ -18,6 +18,6 @@ profileRoutes.get("/", getProfile);
 profileRoutes.post("/", createuserProfile);
 
 // Update profile
-profileRoutes.put("/", updatedProfile);
+profileRoutes.patch("/", updatedProfile);
 
 export { profileRoutes };

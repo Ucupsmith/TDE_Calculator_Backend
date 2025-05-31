@@ -47,14 +47,14 @@ model TdeeCalculation {
 model Profile {
   profileId         Int               @id @default(autoincrement()) @map("profile_id")
   userId            Int               @unique @map("user_id")
-  full_name         String            @db.VarChar(255)
-  birth_date        DateTime          @db.DateTime(0)
-  birth_place       String            @db.VarChar(255)
-  address           String            @db.VarChar(255)
+  full_name         String?           @db.VarChar(255)
+  birth_date        DateTime?         @db.DateTime(0)
+  birth_place       String?           @db.VarChar(255)
+  address           String?           @db.VarChar(255)
   phone_number      String            @db.VarChar(12)
   email             String            @db.VarChar(255)
   avatar            String?
-  gender            Gender
+  gender            Gender?
   mealPlan          MealPlan[]
   notification      notification[]
   user              User              @relation(fields: [userId], references: [userId])
