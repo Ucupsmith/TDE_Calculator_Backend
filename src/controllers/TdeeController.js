@@ -96,7 +96,9 @@ export const saveTdeeToHomeController = async (req, res) => {
   const userId = req.user.id;
 
   if (!userId || !tdee_result) {
-    return res.status(400).json({ message: 'Missing required fields: userId or tdee_result' });
+    return res
+      .status(400)
+      .json({ message: 'Missing required fields: userId or tdee_result' });
   }
 
   try {
@@ -104,12 +106,13 @@ export const saveTdeeToHomeController = async (req, res) => {
       data: {
         userId: userId,
         tdee_result: parseFloat(tdee_result),
-        goal: "MaintainWeight",
-        activity_level: "Sedentary",
+        goal: 'MaintainWeight',
+        activity_level: 'Sedentary',
         age: 0,
         height: 0,
         weight: 0,
-        saved_id: 0
+        saved_id: 0,
+        gender: 'Male'
       }
     });
 
@@ -119,12 +122,16 @@ export const saveTdeeToHomeController = async (req, res) => {
       calculation_date: saved.createdAt
     };
 
-    return res.status(201).json({ message: 'TDEE saved successfully for homepage', data: responseData });
+    return res.status(201).json({
+      message: 'TDEE saved successfully for homepage',
+      data: responseData
+    });
   } catch (error) {
     console.error('Failed to save TDEE for homepage:', error);
-    return res
-      .status(500)
-      .json({ message: 'Failed to save TDEE for homepage', error: error.message });
+    return res.status(500).json({
+      message: 'Failed to save TDEE for homepage',
+      error: error.message
+    });
   }
 };
 
@@ -200,18 +207,20 @@ export const getTdeeHistoryForHome = async (req, res) => {
   try {
     const history = await prisma.tdeeCalculation.findMany({
       where: {
-        userId: userId,
+        userId: userId
       },
       orderBy: {
-        createdAt: 'asc',
+        createdAt: 'asc'
       },
       select: {
+        tdeeId: true,
         tdee_result: true,
-        createdAt: true,
-      },
+        createdAt: true
+      }
     });
 
-    const formattedHistory = history.map(item => ({
+    const formattedHistory = history.map((item) => ({
+      tdeeId: item.tdeeId,
       tdee_result: item.tdee_result,
       calculation_date: item.createdAt
     }));
@@ -219,9 +228,10 @@ export const getTdeeHistoryForHome = async (req, res) => {
     return res.status(200).json(formattedHistory);
   } catch (error) {
     console.error('Failed to fetch TDEE history for homepage:', error);
-    return res
-      .status(500)
-      .json({ message: 'Failed to fetch TDEE history for homepage', error: error.message });
+    return res.status(500).json({
+      message: 'Failed to fetch TDEE history for homepage',
+      error: error.message
+    });
   }
 };
 
@@ -237,13 +247,19 @@ export const deleteTdeeCalculationController = async (req, res) => {
     // Panggil fungsi model untuk menghapus
     const deletedTdee = await deleteTdeeCalculation(Number(tdeeId), userId);
 
-    return res.status(200).json({ message: 'TDEE calculation deleted successfully', data: deletedTdee });
+    return res.status(200).json({
+      message: 'TDEE calculation deleted successfully',
+      data: deletedTdee
+    });
   } catch (error) {
     console.error('Failed to delete TDEE calculation:', error);
     // Kirim respons error yang sesuai
     if (error.message.includes('TDEE calculation not found')) {
-       return res.status(404).json({ message: error.message });
+      return res.status(404).json({ message: error.message });
     }
-    return res.status(500).json({ message: 'Failed to delete TDEE calculation', error: error.message });
+    return res.status(500).json({
+      message: 'Failed to delete TDEE calculation',
+      error: error.message
+    });
   }
 };
