@@ -85,3 +85,25 @@ export const getTdeeByProfileId = async (profileId) => {
     where: { profileId: profileId }
   });
 };
+
+export const getTdeeHistoryForHome = async (userId) => {
+  // ... existing code ...
+};
+
+export const deleteTdeeCalculation = async (tdeeId, userId) => {
+  try {
+    const deletedTdee = await prisma.tdeeCalculation.delete({
+      where: {
+        tdeeId: tdeeId, // Delete by TDEE ID
+        userId: userId, // Ensure the user owns this TDEE calculation
+      },
+    });
+    return deletedTdee;
+  } catch (error) {
+    // Handle case where TDEE calculation is not found or doesn't belong to the user
+    if (error.code === 'P2025') { // P2025: An operation failed because it depends on one or more records that were required but not found.
+      throw new Error('TDEE calculation not found or does not belong to the user.');
+    }
+    throw new Error(`Error deleting TDEE calculation: ${error.message}`);
+  }
+};
