@@ -6,7 +6,8 @@ import {
   getLatestTdeeResultByProfile,
   saveTdeeToHomeController,
   getLastTdeeController,
-  getTdeeHistoryForHome
+  getTdeeHistoryForHome,
+  deleteTdeeCalculationController
 } from '../controllers/TdeeController.js';
 import { authenticateToken } from '../middleware/auth.js';
 
@@ -19,5 +20,6 @@ tdeeRoutes.get('/result', authenticateToken, getLatestTdeeResultByProfile);
 tdeeRoutes.post('/home/save', authenticateToken, saveTdeeToHomeController);
 tdeeRoutes.get('/home/last', authenticateToken, getLastTdeeController);
 tdeeRoutes.get('/home/history', authenticateToken, getTdeeHistoryForHome);
+tdeeRoutes.delete('/history/:tdeeId', authenticateToken, deleteTdeeCalculationController);
 
 export { tdeeRoutes };

@@ -5,7 +5,8 @@ import {
   calculateTDEE,
   saveTdeeCalculation,
   getTdeeByProfileId,
-  getLastTdeeCalculation
+  getLastTdeeCalculation,
+  deleteTdeeCalculation
 } from '../models/TdeeModel.js';
 import prisma from '../../prisma/prismaClient.js';
 
@@ -221,5 +222,28 @@ export const getTdeeHistoryForHome = async (req, res) => {
     return res
       .status(500)
       .json({ message: 'Failed to fetch TDEE history for homepage', error: error.message });
+  }
+};
+
+export const deleteTdeeCalculationController = async (req, res) => {
+  try {
+    const { tdeeId } = req.params; // Ambil tdeeId dari parameter URL
+    const userId = req.user.id; // Ambil userId dari token
+
+    if (!tdeeId) {
+      return res.status(400).json({ message: 'TDEE ID is required' });
+    }
+
+    // Panggil fungsi model untuk menghapus
+    const deletedTdee = await deleteTdeeCalculation(Number(tdeeId), userId);
+
+    return res.status(200).json({ message: 'TDEE calculation deleted successfully', data: deletedTdee });
+  } catch (error) {
+    console.error('Failed to delete TDEE calculation:', error);
+    // Kirim respons error yang sesuai
+    if (error.message.includes('TDEE calculation not found')) {
+       return res.status(404).json({ message: error.message });
+    }
+    return res.status(500).json({ message: 'Failed to delete TDEE calculation', error: error.message });
   }
 };
