@@ -6,8 +6,10 @@ import {
 } from '../models/UserModel.js';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import { PrismaClient } from '@prisma/client';
 
 const JWT_SECRET = process.env.JWT_TOKEN;
+const prisma = new PrismaClient();
 
 export const getUsers = async (req, res) => {
   try {
@@ -53,6 +55,28 @@ export const registerUser = async (req, res) => {
       number_phone,
       hashedPassword
     );
+
+    console.log(`User created successfully with ID: ${newUser.userId}. Attempting to create profile...`);
+
+    // Create a corresponding profile for the new user
+    try {
+      const newProfile = await prisma.profile.create({
+        data: {
+          userId: newUser.userId,
+          phone_number: req.body.number_phone,
+          email: newUser.email,
+          full_name: null,
+          birth_date: null,
+          birth_place: null,
+          address: null,
+          gender: null,
+        }
+      });
+      console.log(`Profile created successfully for user ID: ${newProfile.userId}`);
+    } catch (profileError) {
+      console.error(`Error creating profile for user ID ${newUser.userId}:`, profileError);
+    }
+
     res.status(201).json({
       message: 'User Registered Successfully!',
       data: {

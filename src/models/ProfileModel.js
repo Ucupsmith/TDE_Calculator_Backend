@@ -2,29 +2,31 @@ import db from '../config/db.js';
 import prisma from '../../prisma/prismaClient.js';
 
 const validateProfileData = (data) => {
-  const requiredFields = ['full_name', 'birth_place', 'birth_date', 'address', 'phone_number', 'email', 'gender'];
-  const missingFields = requiredFields.filter(field => !data[field]);
-  
-  if (missingFields.length > 0) {
-    throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
+  // Check for missing fields only if they are expected for a specific operation (like create)
+  // For PATCH, we only validate fields that are provided
+
+  // Validate phone number format if provided
+  if (data.phone_number !== undefined) {
+    const phoneRegex = /^[0-9]{10,12}$/;
+    if (!phoneRegex.test(data.phone_number)) {
+      throw new Error('Invalid phone number format');
+    }
   }
 
-  // Validate phone number format
-  const phoneRegex = /^[0-9]{10,12}$/;
-  if (!phoneRegex.test(data.phone_number)) {
-    throw new Error('Invalid phone number format');
+  // Validate email format if provided
+  if (data.email !== undefined) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(data.email)) {
+      throw new Error('Invalid email format');
+    }
   }
 
-  // Validate email format
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(data.email)) {
-    throw new Error('Invalid email format');
-  }
-
-  // Validate birth date
-  const birthDate = new Date(data.birth_date);
-  if (isNaN(birthDate.getTime())) {
-    throw new Error('Invalid birth date format');
+  // Validate birth date format if provided
+  if (data.birth_date !== undefined) {
+    const birthDate = new Date(data.birth_date);
+    if (isNaN(birthDate.getTime())) {
+      throw new Error('Invalid birth date format');
+    }
   }
 };
 
@@ -93,7 +95,8 @@ export const createProfile = async (userId, profileData) => {
 
 export const updateProfile = async (userId, profileData) => {
   try {
-    validateProfileData(profileData);
+    console.log('updateProfile received userId:', userId);
+    // No need to call validateProfileData here for PATCH, validation should be per-field if needed
 
     // Check if profile exists
     const existingProfile = await prisma.profile.findUnique({
@@ -104,18 +107,40 @@ export const updateProfile = async (userId, profileData) => {
       throw new Error('Profile not found');
     }
 
+    // Build the data object for Prisma update, including only provided fields
+    const dataToUpdate = {};
+    if (profileData.full_name !== undefined) dataToUpdate.full_name = profileData.full_name;
+    if (profileData.gender !== undefined) dataToUpdate.gender = profileData.gender;
+    if (profileData.address !== undefined) dataToUpdate.address = profileData.address;
+    // Add other fields here if they were intended to be updatable and sent from frontend
+    // For example:
+    // if (profileData.birth_place !== undefined) dataToUpdate.birth_place = profileData.birth_place;
+    // if (profileData.birth_date !== undefined) dataToUpdate.birth_date = new Date(profileData.birth_date);
+    // if (profileData.phone_number !== undefined) dataToUpdate.phone_number = profileData.phone_number;
+    // if (profileData.email !== undefined) dataToUpdate.email = profileData.email;
+    // if (profileData.avatar !== undefined) dataToUpdate.avatar = profileData.avatar;
+
+    // Ensure there is at least one field to update
+    if (Object.keys(dataToUpdate).length === 0) {
+        console.warn('No fields provided for profile update for userId:', userId);
+        // Optionally return the existing profile data if nothing was updated
+         const currentProfile = await prisma.profile.findUnique({
+            where: { userId: parseInt(userId) },
+            include: {
+              user: {
+                select: {
+                  email: true,
+                  number_phone: true
+                }
+              }
+            }
+          });
+          return currentProfile; // Return existing data if nothing to update
+    }
+
     const updatedProfile = await prisma.profile.update({
       where: { userId: parseInt(userId) },
-      data: {
-        full_name: profileData.full_name,
-        birth_place: profileData.birth_place,
-        birth_date: new Date(profileData.birth_date),
-        address: profileData.address,
-        phone_number: profileData.phone_number,
-        email: profileData.email,
-        gender: profileData.gender,
-        avatar: profileData.avatar
-      },
+      data: dataToUpdate, // Gunakan objek dataToUpdate yang sudah difilter
       include: {
         user: {
           select: {
@@ -128,6 +153,12 @@ export const updateProfile = async (userId, profileData) => {
 
     return updatedProfile;
   } catch (error) {
+    // Handle potential Prisma validation errors more specifically if needed
+    if (error.code === 'P2002') { // Example: Handle unique constraint violation
+       console.error('Prisma error (P2002): Unique constraint failed', error.message);
+       throw new Error('Duplicate entry for a unique field.');
+    }
+    console.error('Error in updateProfile model:', error);
     throw new Error(`Error updating profile: ${error.message}`);
   }
 };

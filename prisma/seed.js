@@ -122,10 +122,42 @@ async function main() {
   // Insert new data
   for (const food of foodData) {
     await prisma.food.create({
-      data: food
+      data: {
+        ...food, // Include existing food data (name, calories, unit, imageUrl)
+        updatedAt: new Date(), // Add the missing updatedAt field with current date
+        // createdAt will be automatically set by @default(now()) in schema.prisma
+      }
     });
   }
   
+  // Ensure profile exists for user with email aryariyanto29@gmail.com (likely userId 2)
+  const yourUser = await prisma.user.findFirst({
+    where: { email: 'aryariyanto29@gmail.com' },
+    include: { profile: true }, // Include profile to check if it exists
+  });
+
+  if (yourUser && !yourUser.profile) {
+    const yourProfile = await prisma.profile.create({
+      data: {
+        userId: yourUser.userId, // Link profile to your user ID
+        full_name: 'Arya Riyanto', // <<< Ganti dengan nama lengkap Anda
+        birth_date: new Date('2000-01-01'), // <<< Ganti dengan tanggal lahir Anda
+        birth_place: 'Jakarta', // <<< Ganti dengan tempat lahir Anda
+        address: 'bekasi', // <<< Ganti dengan alamat Anda
+        phone_number: yourUser.number_phone, // Use phone number from user data
+        email: yourUser.email, // Use email from user data
+        gender: 'Male', // <<< Ganti dengan Gender Anda ('Male' atau 'Female')
+        avatar: null, // Atau path gambar jika ada
+        // createdAt and updatedAt will be automatically set
+      },
+    });
+    console.log(`Created profile for your user with id: ${yourProfile.userId}`);
+  } else if (yourUser) {
+    console.log(`Profile for user ${yourUser.email} (ID ${yourUser.userId}) already exists, skipping creation.`);
+  } else {
+    console.log('User with email aryariyanto29@gmail.com not found, skipping profile creation.');
+  }
+
   console.log('Seeding finished.');
 }
 
