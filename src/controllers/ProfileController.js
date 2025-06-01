@@ -1,32 +1,32 @@
 import {
   getProfileByUserId,
   createProfile,
-  updateProfile,
-} from "../models/ProfileModel.js";
+  updateProfile
+} from '../models/ProfileModel.js';
 
 const getProfile = async (req, res) => {
   try {
     const userId = req.user.id; // Menggunakan req.user.id sesuai claim token
     console.log('Fetching profile for userId:', userId);
     const profile = await getProfileByUserId(userId);
-    
+
     if (!profile) {
       console.warn('Profile not found for userId:', userId);
-      return res.status(404).json({ 
-        status: "error",
-        message: "Profile not found" 
+      return res.status(404).json({
+        status: 'error',
+        message: 'Profile not found'
       });
     }
 
     res.json({
-      status: "success",
+      status: 'success',
       data: profile
     });
   } catch (error) {
     console.error('Error in getProfile controller:', error);
-    res.status(500).json({ 
-      status: "error",
-      message: "Error retrieving profile",
+    res.status(500).json({
+      status: 'error',
+      message: 'Error retrieving profile',
       error: error.message
     });
   }
@@ -47,16 +47,16 @@ const createuserProfile = async (req, res) => {
     };
 
     const profile = await createProfile(userId, profileData);
-    
+
     res.status(201).json({
-      status: "success",
-      message: "Profile created successfully",
+      status: 'success',
+      message: 'Profile created successfully',
       data: profile
     });
   } catch (error) {
     res.status(500).json({
-      status: "error",
-      message: error.message || "Error creating profile"
+      status: 'error',
+      message: error.message || 'Error creating profile'
     });
   }
 };
@@ -76,16 +76,16 @@ const updatedProfile = async (req, res) => {
     };
 
     const updatedProfile = await updateProfile(userId, profileData);
-    
+
     return res.status(200).json({
-      status: "success",
-      message: "Profile updated successfully",
+      status: 'success',
+      message: 'Profile updated successfully',
       data: updatedProfile
     });
   } catch (error) {
     return res.status(500).json({
-      status: "error",
-      message: error.message || "Failed to update profile"
+      status: 'error',
+      message: error.message || 'Failed to update profile'
     });
   }
 };
