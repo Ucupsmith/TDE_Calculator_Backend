@@ -5,7 +5,8 @@ import nodemailer from 'nodemailer';
 
 // Konfigurasi pengiriman email
 const transporter = nodemailer.createTransport({
-  service: 'gmail', // Menggunakan service Gmail sesuai permintaan
+  host: process.env.EMAIL_HOST, // Mengambil dari .env
+  port: process.env.EMAIL_PORT, // Mengambil dari .env
   auth: {
     user: process.env.EMAIL_USER, // Mengambil dari .env
     pass: process.env.EMAIL_PASS, // Mengambil dari .env
@@ -17,8 +18,8 @@ export const requestPasswordReset = async (req, res) => {
   const { email } = req.body;
 
   try {
-    // Cari user berdasarkan email
-    const user = await prisma.user.findUnique({
+    // Cari user berdasarkan email menggunakan findFirst
+    const user = await prisma.user.findFirst({
       where: { email: email },
     });
 
@@ -42,7 +43,7 @@ export const requestPasswordReset = async (req, res) => {
 
     // --- Bagian Pengiriman Email ---
     const mailOptions = {
-      from: process.env.EMAIL_USER, // Gunakan email pengirim dari .env
+      from: process.env.EMAIL_FROM, // Gunakan email pengirim dari .env
       to: user.email,
       subject: 'Password Reset Request', // Subject sesuai permintaan
       text: `Hello ${user.email},
