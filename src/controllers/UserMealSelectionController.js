@@ -29,11 +29,49 @@ export const createMealSelection = async (req, res) => {
     }
 
     // Get food details with correct portions based on goal
-    const foodsWithDetails = selectedFoods.map(food => ({
-      ...food,
-      details: getFoodDetails(food.name, tdeeCalculation.goal)
-    }));
+    const foodsWithDetails = selectedFoods.map(food => {
+      const foodFromDatabase = getFoodDetails(food.name, tdeeCalculation.goal);
+      
+      // If food is found in the database, use those details
+      if (foodFromDatabase) {
+        return { ...food, details: foodFromDatabase };
+      } else {
+        // If not found in database, assume it's a custom food and use provided details
+        // Ensure necessary fields are present, assuming frontend sends them
+        if (!food.name || food.calories === undefined || food.unit === undefined || food.quantity === undefined) {
+           console.error('Missing details for custom food:', food);
+           // Depending on desired behavior, you might skip this food, return a default, or throw an error
+           return null; // Or handle as needed
+        }
+        // Store custom food details as they are, perhaps in a 'details' sub-object for consistency
+        return { 
+           ...food, 
+           details: { 
+              name: food.name, 
+              calories: food.calories / food.quantity, // Store calories per unit if total calories for quantity is sent
+              unit: food.unit 
+              // Add other custom fields if needed
+           } 
+        };
+      }
+    }).filter(food => food !== null); // Filter out any foods that couldn't be processed
     
+    // Calculate total calories based on the potentially modified foodsWithDetails array
+    // This calculation needs to handle both database foods (using details.calories) and custom foods (using the provided food.calories or recalculating from details if stored per unit)
+    const totalCalories = foodsWithDetails.reduce((total, food) => {
+      if (food.details && food.details.calories !== undefined && food.quantity !== undefined) {
+         // If details are available (either from DB or custom stored in details), use them
+         // Assuming details.calories is calories per unit
+         return total + (food.details.calories * food.quantity);
+      } else if (food.calories !== undefined && food.quantity !== undefined) {
+         // Fallback: if details not structured as expected but food.calories is present (maybe total calories for quantity was sent directly)
+          console.warn('Using direct food.calories for total calculation:', food);
+          return total + food.calories; 
+      }
+      console.error('Could not calculate calories for food:', food);
+      return total; // Skip if calories or quantity are missing
+    }, 0);
+
     const mealSelection = await createUserMealSelection({
       userId,
       tdeeId,
@@ -226,14 +264,49 @@ export const updateMealSelection = async (req, res) => {
       });
     }
 
-    // Get food details with correct portions based on goal
-    const foodsWithDetails = selectedFoods.map(food => ({
-      ...food,
-      details: getFoodDetails(food.name, tdeeCalculation.goal)
-    }));
+    // === Start of modified logic for processing selectedFoods ===
+    const foodsWithDetails = selectedFoods.map(food => {
+      const foodFromDatabase = getFoodDetails(food.name, tdeeCalculation.goal); // This call already applies the nasi/lose weight logic for DB foods
 
-    // Calculate new total calories
-    const totalCalories = calculateTotalCalories(foodsWithDetails, tdeeCalculation.goal);
+      // If food is found in the database, use those details
+      if (foodFromDatabase) {
+        return { ...food, details: foodFromDatabase }; // foodFromDatabase already has correct calories/unit for nasi LW
+      } else {
+        // If not found in database, assume it's a custom food and use provided details
+        // Ensure necessary fields are present, assuming frontend sends them
+        if (!food.name || food.calories === undefined || food.unit === undefined || food.quantity === undefined) {
+           console.error('Missing details for custom food in update:', food);
+           // Depending on desired behavior, you might skip this food, return a default, or throw an error
+           return null; // Or handle as needed
+        }
+        // Store custom food details as they are, perhaps in a 'details' sub-object for consistency
+        return { 
+           ...food, 
+           details: { 
+              name: food.name, 
+              calories: food.calories / food.quantity, // Store calories per unit if total calories for quantity is sent
+              unit: food.unit 
+              // Add other custom fields if needed
+           } 
+        };
+      }
+    }).filter(food => food !== null); // Filter out any foods that couldn't be processed
+
+    // Calculate new total calories based on the potentially modified foodsWithDetails array
+    const totalCalories = foodsWithDetails.reduce((total, food) => {
+      if (food.details && food.details.calories !== undefined && food.quantity !== undefined) {
+         // If details are available (either from DB or custom stored in details), use them
+         // Assuming details.calories is calories per unit
+         return total + (food.details.calories * food.quantity);
+      } else if (food.calories !== undefined && food.quantity !== undefined) {
+         // Fallback: if details not structured as expected but food.calories is present (maybe total calories for quantity was sent directly)
+          console.warn('Using direct food.calories for total calculation in update:', food);
+          return total + food.calories; 
+      }
+      console.error('Could not calculate calories for food in update:', food);
+      return total; // Skip if calories or quantity are missing
+    }, 0);
+    // === End of modified logic ===
 
     // Get all selections for the same day
     const startOfDay = new Date(existingSelection.date);
