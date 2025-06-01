@@ -365,3 +365,25 @@ export const updateMealSelection = async (req, res) => {
     });
   }
 }; 
+
+// Endpoint baru: GET /user/v1/meal-plans/summary?userId=...&tdeeId=...
+export const getMealPlanSummary = async (req, res) => {
+  try {
+    const { tdeeId } = req.query;
+    if (!tdeeId) {
+      return res.status(400).json({ message: 'tdeeId is required' });
+    }
+    const tdeeCalculation = await prisma.tdeeCalculation.findUnique({
+      where: { tdeeId: Number(tdeeId) }
+    });
+    if (!tdeeCalculation) {
+      return res.status(404).json({ message: 'TDEE calculation not found' });
+    }
+    return res.json({
+      goal: tdeeCalculation.goal,
+      tdee: tdeeCalculation.tdee_result
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching meal plan summary', error: error.message });
+  }
+};
