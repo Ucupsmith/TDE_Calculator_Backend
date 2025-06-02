@@ -53,6 +53,7 @@ export const createMealSelection = async (req, res) => {
               // Add other custom fields if needed
            } 
         };
+
       }
     }).filter(food => food !== null); // Filter out any foods that couldn't be processed
     
@@ -387,3 +388,4 @@ export const getMealPlanSummary = async (req, res) => {
     res.status(500).json({ message: 'Error fetching meal plan summary', error: error.message });
   }
 };
+

@@ -4,32 +4,12 @@ import {
   calculateTotalCalories,
   calculateRemainingCalories
 } from "../models/FoodModel.js";
+import prisma from "../../prisma/prismaClient.js";
 
 // Get all available foods
 export const getAllFoodsController = (req, res) => {
   try {
-    const goal = req.query.goal; // 'lose' atau 'gain'
-    let foods = getAllFoods();
-    if (goal === 'lose' || goal === 'gain' || goal === 'maintain') {
-      foods = foods.map(food => {
-        if (food.name === 'nasi' || food.name === 'nasi merah') {
-          if (goal === 'lose') {
-            return {
-              ...food,
-              unit: '1/2 porsi',
-              calories: Math.round(food.calories / 2)
-            };
-          } else if (goal === 'gain' || goal === 'maintain') {
-            return {
-              ...food,
-              unit: '1 porsi',
-              calories: food.calories
-            };
-          }
-        }
-        return food;
-      });
-    }
+    const foods = getAllFoods();
     res.json(foods);
   } catch (error) {
     res.status(500).json({ message: "Error fetching foods", error: error.message });
@@ -47,6 +27,43 @@ export const getFoodByNameController = (req, res) => {
     res.json(food);
   } catch (error) {
     res.status(500).json({ message: "Error fetching food", error: error.message });
+  }
+};
+
+// Get available foods for meal plan
+export const getMealPlanFoodsController = (req, res) => {
+  try {
+    const foods = getAllFoods();
+    
+    // Group foods by name to handle multiple portions
+    const groupedFoods = foods.reduce((acc, food) => {
+      if (!acc[food.name]) {
+        acc[food.name] = {
+          name: food.name,
+          imageUrl: food.imageUrl,
+          portions: []
+        };
+      }
+      
+      acc[food.name].portions.push({
+        unit: food.unit,
+        calories: food.calories
+      });
+      
+      return acc;
+    }, {});
+    
+    // Convert to array and sort by name
+    const formattedFoods = Object.values(groupedFoods).sort((a, b) => 
+      a.name.localeCompare(b.name)
+    );
+    
+    res.json(formattedFoods);
+  } catch (error) {
+    res.status(500).json({ 
+      message: "Error fetching meal plan foods", 
+      error: error.message 
+    });
   }
 };
 
@@ -75,5 +92,110 @@ export const calculateRemainingCaloriesController = (req, res) => {
     res.json({ remainingCalories });
   } catch (error) {
     res.status(500).json({ message: "Error calculating remaining calories", error: error.message });
+  }
+};
+
+// Add custom food to meal plan
+export const addCustomFoodController = (req, res) => {
+  try {
+    const { name, calories, unit, quantity = 1 } = req.body;
+
+    // Validate required fields
+    if (!name || calories === undefined || !unit) {
+      return res.status(400).json({
+        message: "Missing required fields. Required: name, calories, unit"
+      });
+    }
+
+    // Validate data types
+    if (typeof name !== 'string' || typeof calories !== 'number' || typeof unit !== 'string') {
+      return res.status(400).json({
+        message: "Invalid data types. name and unit should be strings, calories should be a number"
+      });
+    }
+
+    // Validate calories is positive
+    if (calories < 0) {
+      return res.status(400).json({
+        message: "Calories cannot be negative"
+      });
+    }
+
+    // Create custom food object
+    const customFood = {
+      name,
+      calories: calories * quantity, // Total calories based on quantity
+      unit,
+      quantity,
+      isCustom: true // Flag to identify custom foods
+    };
+
+    res.status(201).json({
+      message: "Custom food added successfully",
+      data: customFood
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Error adding custom food",
+      error: error.message
+    });
+  }
+};
+
+// Get user's custom foods
+export const getUserCustomFoodsController = async (req, res) => {
+  try {
+    const { userId } = req.query;
+
+    if (!userId) {
+      return res.status(400).json({
+        message: "userId is required"
+      });
+    }
+
+    // Get user's meal selections
+    const mealSelections = await prisma.userMealSelection.findMany({
+      where: {
+        userId: Number(userId)
+      }
+    });
+
+    // Extract custom foods from meal selections
+    const customFoods = mealSelections.reduce((acc, selection) => {
+      const foods = JSON.parse(selection.selectedFoods);
+      
+      // Filter only custom foods
+      const customFoodsInSelection = foods.filter(food => food.isCustom);
+      
+      // Add to accumulator if not already exists
+      customFoodsInSelection.forEach(food => {
+        const exists = acc.some(existing => 
+          existing.name === food.name && 
+          existing.unit === food.unit && 
+          existing.calories === food.calories
+        );
+        
+        if (!exists) {
+          acc.push({
+            name: food.name,
+            calories: food.calories,
+            unit: food.unit,
+            isCustom: true
+          });
+        }
+      });
+      
+      return acc;
+    }, []);
+
+    res.json({
+      message: "Custom foods retrieved successfully",
+      data: customFoods
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Error fetching custom foods",
+      error: error.message
+    });
   }
 }; 

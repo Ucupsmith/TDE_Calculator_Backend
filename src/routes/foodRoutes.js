@@ -3,21 +3,33 @@ import {
   getAllFoodsController,
   getFoodByNameController,
   calculateTotalCaloriesController,
-  calculateRemainingCaloriesController
+  calculateRemainingCaloriesController,
+  getMealPlanFoodsController,
+  addCustomFoodController,
+  getUserCustomFoodsController
 } from '../controllers/FoodController.js';
 
 const router = express.Router();
 
-// Get all available foods
-router.get('/foods', getAllFoodsController);
+// Get all foods
+router.get('/', getAllFoodsController);
 
 // Get food by name
-router.get('/foods/:name', getFoodByNameController);
+router.get('/:name', getFoodByNameController);
 
-// Calculate total calories for selected foods
+// Get available foods for meal plan
+router.get('/meal-plan/foods', getMealPlanFoodsController);
+
+// Get user's custom foods
+router.get('/custom/user', getUserCustomFoodsController);
+
+// Add custom food
+router.post('/custom', addCustomFoodController);
+
+// Calculate total calories
 router.post('/calculate-total-calories', calculateTotalCaloriesController);
 
-// Calculate remaining calories based on TDEE and selected foods
+// Calculate remaining calories
 router.post('/calculate-remaining-calories', calculateRemainingCaloriesController);
 
 export default router; 
