@@ -1,13 +1,14 @@
 import express from 'express';
 const router = express.Router();
-import { 
-  createMealSelection, 
-  getMealSelections, 
-  getLatestSelection, 
+import {
+  createMealSelection,
+  getMealSelections,
+  getLatestSelection,
   getCurrentDayCaloriesController,
   getMealPlanHistory,
   updateMealSelection,
-  getMealPlanSummary
+  getMealPlanSummary,
+  getMealPlanByTdeeId
 } from '../controllers/UserMealSelectionController.js';
 
 // Create meal plan
@@ -31,4 +32,6 @@ router.put('/selections/:id', updateMealSelection);
 // Get meal plan summary
 router.get('/summary', getMealPlanSummary);
 
-export default router; 
+router.get('/summary/', getMealPlanByTdeeId);
+
+export default router;

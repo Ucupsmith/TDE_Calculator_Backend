@@ -11,7 +11,7 @@ import {
 
 const router = express.Router();
 
-// Get all foods
+// Get all available foods
 router.get('/', getAllFoodsController);
 
 // Get food by name
@@ -29,7 +29,10 @@ router.post('/custom', addCustomFoodController);
 // Calculate total calories
 router.post('/calculate-total-calories', calculateTotalCaloriesController);
 
-// Calculate remaining calories
-router.post('/calculate-remaining-calories', calculateRemainingCaloriesController);
+// Calculate remaining calories based on TDEE and selected foods
+router.post(
+  '/calculate-remaining-calories',
+  calculateRemainingCaloriesController
+);
 
-export default router; 
+export default router;
