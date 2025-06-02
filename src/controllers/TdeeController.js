@@ -92,13 +92,13 @@ export const saveTdeeCalculationController = async (req, res) => {
 };
 
 export const saveTdeeToHomeController = async (req, res) => {
-  const { tdee_result } = req.body;
+  const { tdee_result, goal } = req.body;
   const userId = req.user.id;
 
-  if (!userId || !tdee_result) {
+  if (!userId || !tdee_result || !goal) {
     return res
       .status(400)
-      .json({ message: 'Missing required fields: userId or tdee_result' });
+      .json({ message: 'Missing required fields: userId, tdee_result, or goal' });
   }
 
   try {
@@ -106,7 +106,7 @@ export const saveTdeeToHomeController = async (req, res) => {
       data: {
         userId: userId,
         tdee_result: parseFloat(tdee_result),
-        goal: 'MaintainWeight',
+        goal: goal,
         activity_level: 'Sedentary',
         age: 0,
         height: 0,
@@ -119,7 +119,8 @@ export const saveTdeeToHomeController = async (req, res) => {
     const responseData = {
       id: saved.tdeeId,
       tdee_result: saved.tdee_result,
-      calculation_date: saved.createdAt
+      calculation_date: saved.createdAt,
+      goal: saved.goal
     };
 
     return res.status(201).json({
@@ -155,7 +156,8 @@ export const getLastTdeeController = async (req, res) => {
       tdeeId: lastTdee.tdeeId,
       tdee: lastTdee.tdee_result,
       createdAt: lastTdee.createdAt,
-      lastCalculated: lastTdee.createdAt
+      lastCalculated: lastTdee.createdAt,
+      goal: undefined
     });
   } catch (error) {
     return res
@@ -222,7 +224,8 @@ export const getTdeeHistoryForHome = async (req, res) => {
     const formattedHistory = history.map((item) => ({
       tdeeId: item.tdeeId,
       tdee_result: item.tdee_result,
-      calculation_date: item.createdAt
+      calculation_date: item.createdAt,
+      goal: undefined
     }));
 
     return res.status(200).json(formattedHistory);
