@@ -23,6 +23,8 @@ export const requestPasswordReset = async (req, res) => {
       where: { email: email },
     });
 
+    console.log('Request Password Reset: User found by email', user ? user.email : 'None'); // Log user email found
+
     if (!user) {
       // Mengubah respons sesuai permintaan user: email tidak terdaftar
       return res.status(404).json({ message: "Email tidak terdaftar." });
@@ -40,6 +42,8 @@ export const requestPasswordReset = async (req, res) => {
         reset_token_expiry: resetTokenExpiry,
       },
     });
+
+    console.log('Request Password Reset: Saved token to DB', resetToken); // Log full token saved to DB
 
     // --- Bagian Pengiriman Email ---
     const mailOptions = {
@@ -86,16 +90,29 @@ TDEECalculation Team`, // Isi pesan sesuai template
 export const resetPassword = async (req, res) => {
   const { token, newPassword } = req.body;
 
+  console.log('Reset Password Attempt: Received token', token);
+
   try {
-    // Cari user berdasarkan token reset dan pastikan belum expired
+    console.log('Reset Password Attempt: Adding a small delay before DB query');
+    await new Promise(resolve => setTimeout(resolve, 500)); // Add a 500ms delay
+    console.log('Reset Password Attempt: Executing DB query for token', token);
+    // Cari user berdasarkan token reset (validasi waktu sementara dimatikan)
+    // Menggunakan findFirst karena reset_token mungkin tidak unik untuk findUnique
     const user = await prisma.user.findFirst({
       where: {
         reset_token: token,
-        reset_token_expiry: { gt: new Date() }, // Pastikan token belum expired
       },
     });
 
+    console.log('Reset Password Attempt: DB query result (user object)', user);
+
+    console.log('Reset Password Attempt: User found?', !!user);
+    if (user) {
+      console.log('Reset Password Attempt: Token in DB (for found user)', user.reset_token); // Log full token in DB
+    }
+
     if (!user) {
+      console.log('Reset Password Attempt: Token mismatch or not found');
       return res.status(400).json({ message: "Token reset password tidak valid atau sudah kedaluwarsa." });
     }
 

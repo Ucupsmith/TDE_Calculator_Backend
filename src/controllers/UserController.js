@@ -56,7 +56,9 @@ export const registerUser = async (req, res) => {
       hashedPassword
     );
 
-    console.log(`User created successfully with ID: ${newUser.userId}. Attempting to create profile...`);
+    console.log(
+      `User created successfully with ID: ${newUser.userId}. Attempting to create profile...`
+    );
 
     // Create a corresponding profile for the new user
     try {
@@ -69,12 +71,17 @@ export const registerUser = async (req, res) => {
           birth_date: null,
           birth_place: null,
           address: null,
-          gender: null,
+          gender: null
         }
       });
-      console.log(`Profile created successfully for user ID: ${newProfile.userId}`);
+      console.log(
+        `Profile created successfully for user ID: ${newProfile.userId}`
+      );
     } catch (profileError) {
-      console.error(`Error creating profile for user ID ${newUser.userId}:`, profileError);
+      console.error(
+        `Error creating profile for user ID ${newUser.userId}:`,
+        profileError
+      );
     }
 
     res.status(201).json({
@@ -105,7 +112,8 @@ export const login = async (req, res) => {
     const token = jwt.sign(
       {
         id: user.userId,
-        email: user.email
+        email: user.email,
+        number_phone: user.number_phone
       },
       JWT_SECRET,
       { expiresIn: '1h' }
@@ -116,7 +124,8 @@ export const login = async (req, res) => {
       data: {
         id: user.userId,
         username: user.username,
-        email: user.email
+        email: user.email,
+        number_phone: user.number_phone
       }
     });
   } catch (error) {

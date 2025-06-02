@@ -1,10 +1,10 @@
-import express from "express";
+import express from 'express';
 import {
   getProfile,
   createuserProfile,
   updatedProfile
-} from "../controllers/ProfileController.js";
-import { authenticateToken } from "../middleware/auth.js";
+} from '../controllers/ProfileController.js';
+import { authenticateToken } from '../middleware/auth.js';
 
 const profileRoutes = express.Router();
 
@@ -12,12 +12,12 @@ const profileRoutes = express.Router();
 profileRoutes.use(authenticateToken);
 
 // Get user's own profile
-profileRoutes.get("/", getProfile);
+profileRoutes.get('/', authenticateToken, getProfile);
 
 // Create new profile
-profileRoutes.post("/", createuserProfile);
+profileRoutes.post('/', createuserProfile);
 
 // Update profile
-profileRoutes.patch("/", updatedProfile);
+profileRoutes.patch('/', updatedProfile);
 
 export { profileRoutes };

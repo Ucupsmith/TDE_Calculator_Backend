@@ -109,9 +109,12 @@ export const updateProfile = async (userId, profileData) => {
 
     // Build the data object for Prisma update, including only provided fields
     const dataToUpdate = {};
-    if (profileData.full_name !== undefined) dataToUpdate.full_name = profileData.full_name;
-    if (profileData.gender !== undefined) dataToUpdate.gender = profileData.gender;
-    if (profileData.address !== undefined) dataToUpdate.address = profileData.address;
+    if (profileData.full_name !== undefined)
+      dataToUpdate.full_name = profileData.full_name;
+    if (profileData.gender !== undefined)
+      dataToUpdate.gender = profileData.gender;
+    if (profileData.address !== undefined)
+      dataToUpdate.address = profileData.address;
     // Add other fields here if they were intended to be updatable and sent from frontend
     // For example:
     // if (profileData.birth_place !== undefined) dataToUpdate.birth_place = profileData.birth_place;
@@ -122,20 +125,20 @@ export const updateProfile = async (userId, profileData) => {
 
     // Ensure there is at least one field to update
     if (Object.keys(dataToUpdate).length === 0) {
-        console.warn('No fields provided for profile update for userId:', userId);
-        // Optionally return the existing profile data if nothing was updated
-         const currentProfile = await prisma.profile.findUnique({
-            where: { userId: parseInt(userId) },
-            include: {
-              user: {
-                select: {
-                  email: true,
-                  number_phone: true
-                }
-              }
+      console.warn('No fields provided for profile update for userId:', userId);
+      // Optionally return the existing profile data if nothing was updated
+      const currentProfile = await prisma.profile.findUnique({
+        where: { userId: parseInt(userId) },
+        include: {
+          user: {
+            select: {
+              email: true,
+              number_phone: true
             }
-          });
-          return currentProfile; // Return existing data if nothing to update
+          }
+        }
+      });
+      return currentProfile; // Return existing data if nothing to update
     }
 
     const updatedProfile = await prisma.profile.update({
@@ -154,9 +157,13 @@ export const updateProfile = async (userId, profileData) => {
     return updatedProfile;
   } catch (error) {
     // Handle potential Prisma validation errors more specifically if needed
-    if (error.code === 'P2002') { // Example: Handle unique constraint violation
-       console.error('Prisma error (P2002): Unique constraint failed', error.message);
-       throw new Error('Duplicate entry for a unique field.');
+    if (error.code === 'P2002') {
+      // Example: Handle unique constraint violation
+      console.error(
+        'Prisma error (P2002): Unique constraint failed',
+        error.message
+      );
+      throw new Error('Duplicate entry for a unique field.');
     }
     console.error('Error in updateProfile model:', error);
     throw new Error(`Error updating profile: ${error.message}`);

@@ -3,32 +3,85 @@ import {
   createProfile,
   updateProfile
 } from '../models/ProfileModel.js';
+import prisma from '../../prisma/prismaClient.js';
+
+// src/controllers/ProfileController.js
 
 const getProfile = async (req, res) => {
+  const userId = req.user.id;
+  console.log('Fetching profile for userId:', userId);
+
   try {
-    const userId = req.user.id; // Menggunakan req.user.id sesuai claim token
-    console.log('Fetching profile for userId:', userId);
-    const profile = await getProfileByUserId(userId);
+    let profile = await getProfileByUserId(userId); // Coba fetch profile
 
-    if (!profile) {
-      console.warn('Profile not found for userId:', userId);
-      return res.status(404).json({
-        status: 'error',
-        message: 'Profile not found'
-      });
-    }
-
+    // Jika profile ditemukan, langsung kirim response
     res.json({
       status: 'success',
       data: profile
     });
   } catch (error) {
-    console.error('Error in getProfile controller:', error);
-    res.status(500).json({
-      status: 'error',
-      message: 'Error retrieving profile',
-      error: error.message
-    });
+    // === TANGKAP ERROR SPESIFIK "Profile not found" DI SINI ===
+    if (
+      error.message === 'Error fetching profile: Profile not found' ||
+      error.message.includes('not found')
+    ) {
+      // Cek pesan error
+      console.log(
+        `No profile found for userId ${userId}, creating default profile...`
+      );
+      try {
+        // === PINDAHKAN LOGIKA CREATE PROFILE KE DALAM BLOK INI ===
+        const newProfile = await prisma.profile.create({
+          data: {
+            userId: userId,
+            email: req.user.email,
+            phone_number: req.user.number_phone || '',
+            full_name: null,
+            birth_date: null,
+            birth_place: null,
+            address: null,
+            gender: null
+          },
+          include: {
+            user: {
+              select: {
+                email: true,
+                number_phone: true
+              }
+            }
+          }
+        });
+        console.log(
+          `Default profile created successfully for user ID: ${userId}`
+        );
+        res.status(201).json({
+          // Kembalikan status 201 Created untuk profile baru
+          status: 'success',
+          data: newProfile
+        });
+        // === SAMPAI SINI ===
+      } catch (createError) {
+        // Tangkap error jika pembuatan profile default GAGAL
+        console.error(
+          'Error creating default profile for userId:',
+          userId,
+          createError
+        );
+        res.status(500).json({
+          status: 'error',
+          message: 'Error creating default profile', // Pesan lebih spesifik
+          error: createError.message
+        });
+      }
+    } else {
+      // === TANGKAP ERROR LAIN (BUKAN "NOT FOUND") DI SINI ===
+      console.error('Error in getProfile controller (other error):', error);
+      res.status(500).json({
+        status: 'error',
+        message: 'Error retrieving profile', // Pesan umum
+        error: error.message
+      });
+    }
   }
 };
 
