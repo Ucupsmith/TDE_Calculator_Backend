@@ -6,7 +6,9 @@ import {
   calculateRemainingCaloriesController,
   getMealPlanFoodsController,
   addCustomFoodController,
-  getUserCustomFoodsController
+  getUserCustomFoodsController,
+  deleteUserCustomFoodController,
+  updateUserCustomFoodController
 } from '../controllers/FoodController.js';
 
 const router = express.Router();
@@ -34,5 +36,11 @@ router.post(
   '/calculate-remaining-calories',
   calculateRemainingCaloriesController
 );
+
+// Delete user's custom food
+router.delete('/custom', deleteUserCustomFoodController);
+
+// Update user's custom food
+router.put('/custom', updateUserCustomFoodController);
 
 export default router;

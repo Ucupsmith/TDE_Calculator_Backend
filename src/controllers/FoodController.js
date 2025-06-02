@@ -146,55 +146,151 @@ export const addCustomFoodController = (req, res) => {
 export const getUserCustomFoodsController = async (req, res) => {
   try {
     const { userId } = req.query;
-
     if (!userId) {
-      return res.status(400).json({
-        message: "userId is required"
-      });
+      return res.status(400).json({ message: "userId is required" });
     }
 
-    // Get user's meal selections
+    // Query meal selections for the user
     const mealSelections = await prisma.userMealSelection.findMany({
-      where: {
-        userId: Number(userId)
+      where: { userId: Number(userId) },
+      orderBy: { date: 'desc' }
+    });
+
+    // Extract and flatten all custom foods from meal selections
+    let customFoods = [];
+    mealSelections.forEach(selection => {
+      const foods = JSON.parse(selection.selectedFoods || '[]');
+      foods.forEach(food => {
+        if (food.isCustom) {
+          customFoods.push(food);
+        }
+      });
+    });
+
+    // Remove duplicates by name, unit, and calories
+    const uniqueCustomFoods = [];
+    const seen = new Set();
+    customFoods.forEach(food => {
+      const key = `${food.name}|${food.unit}|${food.calories}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        uniqueCustomFoods.push(food);
       }
     });
 
-    // Extract custom foods from meal selections
-    const customFoods = mealSelections.reduce((acc, selection) => {
-      const foods = JSON.parse(selection.selectedFoods);
-      
-      // Filter only custom foods
-      const customFoodsInSelection = foods.filter(food => food.isCustom);
-      
-      // Add to accumulator if not already exists
-      customFoodsInSelection.forEach(food => {
-        const exists = acc.some(existing => 
-          existing.name === food.name && 
-          existing.unit === food.unit && 
-          existing.calories === food.calories
-        );
-        
-        if (!exists) {
-          acc.push({
-            name: food.name,
-            calories: food.calories,
-            unit: food.unit,
-            isCustom: true
-          });
-        }
-      });
-      
-      return acc;
-    }, []);
+    // Map to desired format
+    const mappedFoods = uniqueCustomFoods.map(food => ({
+      name: food.name,
+      calories: food.calories,
+      unit: food.unit,
+      isCustom: true
+    }));
 
     res.json({
-      message: "Custom foods retrieved successfully",
-      data: customFoods
+      message: "Custom foods fetched successfully",
+      data: mappedFoods
     });
   } catch (error) {
     res.status(500).json({
       message: "Error fetching custom foods",
+      error: error.message
+    });
+  }
+};
+
+export const deleteUserCustomFoodController = async (req, res) => {
+  try {
+    const { userId, name, unit, calories } = req.body;
+    if (!userId || !name || !unit || calories === undefined) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    const mealSelections = await prisma.userMealSelection.findMany({
+      where: { userId: Number(userId) }
+    });
+
+    let updatedCount = 0;
+    for (const selection of mealSelections) {
+      let foods = JSON.parse(selection.selectedFoods || '[]');
+      const originalLength = foods.length;
+      foods = foods.filter(
+        food =>
+          !(
+            food.isCustom &&
+            food.name === name &&
+            food.unit === unit &&
+            food.calories === calories
+          )
+      );
+      if (foods.length !== originalLength) {
+        await prisma.userMealSelection.update({
+          where: { id: selection.id },
+          data: { selectedFoods: JSON.stringify(foods) }
+        });
+        updatedCount++;
+      }
+    }
+
+    res.json({
+      message: "Custom food deleted successfully",
+      updatedSelections: updatedCount
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Error deleting custom food",
+      error: error.message
+    });
+  }
+};
+
+export const updateUserCustomFoodController = async (req, res) => {
+  try {
+    const { userId, oldName, oldUnit, oldCalories, newName, newUnit, newCalories } = req.body;
+    if (!userId || !oldName || !oldUnit || oldCalories === undefined || !newName || !newUnit || newCalories === undefined) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    const mealSelections = await prisma.userMealSelection.findMany({
+      where: { userId: Number(userId) }
+    });
+
+    let updatedCount = 0;
+    for (const selection of mealSelections) {
+      let foods = JSON.parse(selection.selectedFoods || '[]');
+      let changed = false;
+      foods = foods.map(food => {
+        if (
+          food.isCustom &&
+          food.name === oldName &&
+          food.unit === oldUnit &&
+          food.calories === oldCalories
+        ) {
+          changed = true;
+          return {
+            ...food,
+            name: newName,
+            unit: newUnit,
+            calories: newCalories
+          };
+        }
+        return food;
+      });
+      if (changed) {
+        await prisma.userMealSelection.update({
+          where: { id: selection.id },
+          data: { selectedFoods: JSON.stringify(foods) }
+        });
+        updatedCount++;
+      }
+    }
+
+    res.json({
+      message: "Custom food updated successfully",
+      updatedSelections: updatedCount
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Error updating custom food",
       error: error.message
     });
   }
