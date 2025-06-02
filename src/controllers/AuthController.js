@@ -50,20 +50,7 @@ export const requestPasswordReset = async (req, res) => {
       from: process.env.EMAIL_FROM, // Gunakan email pengirim dari .env
       to: user.email,
       subject: 'Password Reset Request', // Subject sesuai permintaan
-      text: `Hello ${user.email},
-
-We received a request to reset the password for your account. To proceed, please click the link below:
-
-YOUR_FRONTEND_RESET_PASSWORD_URL?token=${resetToken}
-
-Please make sure to reset your password within 1 hour, as the link will expire after that period. If you did not request this, you can safely ignore this email.
-
-If you need further assistance, feel free to contact our support team.
-
-Thank you.
-
-Best regards,
-TDEECalculation Team`, // Isi pesan sesuai template
+      text: `Hello ${user.email},\n\nKami menerima permintaan reset password untuk akun Anda. Klik link berikut untuk reset password:\n\n${process.env.FRONTEND_URL}/auth/reset-password?token=${resetToken}\n\nLink berlaku 1 jam. Jika Anda tidak meminta, abaikan email ini.\n\nTerima kasih,\nTDEECalculation Team`, // Isi pesan sesuai template
     };
 
     transporter.sendMail(mailOptions, (err, info) => {
