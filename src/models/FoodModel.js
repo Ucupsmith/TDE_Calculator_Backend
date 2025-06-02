@@ -57,7 +57,7 @@ const foodData = [
   { name: "mangga", calories: 135, unit: "1 buahh", imageUrl: "/images/mangga.png" },
   { name: "melon", calories: 60, unit: "1 porsi", imageUrl: "/images/melon.png" },
   { name: "nanas", calories: 74, unit: "1 porsi", imageUrl: "/images/nanas.png" },
-  { name: "nasi", calories: 129, unit: "1 porsi", loseWeightUnit: "1/2 porsi", loseWeightCalories: 65, imageUrl: "/images/nasi.png" },
+  { name: "nasi", calories: 129, unit: "1 porsi", imageUrl: "/images/nasi.png" },
   { name: "nasi goreng", calories: 250, unit: "1 porsi", imageUrl: "/images/nasi_goreng.png" },
   { name: "nasi merah", calories: 110, unit: "1 porsi", imageUrl: "/images/nasi_merah.png" },
   { name: "oatmeal", calories: 97, unit: "1 porsi", imageUrl: "/images/oatmeal.png" },
@@ -109,7 +109,10 @@ const foodData = [
   { name: "udang goreng tepung", calories: 245, unit: "1 porsi", imageUrl: "/images/udang_goreng_tepung.png" },
   { name: "usus", calories: 94, unit: "1 porsi", imageUrl: "/images/usus.png" },
   { name: "wafer coklat", calories: 26, unit: "1 buah", imageUrl: "/images/wafer_coklat.png" },
-  { name: "wortel", calories: 41, unit: "1 porsi", imageUrl: "/images/wortel.png" }
+  { name: "wortel", calories: 41, unit: "1 porsi", imageUrl: "/images/wortel.png" },
+  { name: "nasi", calories: 65, unit: "1/2 porsi", imageUrl: "/images/nasi.png" },
+  { name: "nasi merah", calories: 55, unit: "1/2 porsi", imageUrl: "/images/nasi_merah.png" },
+
 ];
 
 export const getAllFoods = () => {
@@ -120,37 +123,20 @@ export const getFoodByName = (name) => {
   return foodData.find(food => food.name.toLowerCase() === name.toLowerCase());
 };
 
-export const calculateTotalCalories = (selectedFoods, goal) => {
+export const calculateTotalCalories = (selectedFoods) => {
   return selectedFoods.reduce((total, food) => {
     const foodData = getFoodByName(food.name);
     if (!foodData) return total;
-
-    // Special handling for rice based on goal
-    if (food.name.toLowerCase() === "nasi" && goal === "LoseWeight") {
-      return total + foodData.loseWeightCalories;
-    }
-
     return total + foodData.calories;
   }, 0);
 };
 
-export const calculateRemainingCalories = (tdee, selectedFoods, goal) => {
-  const totalCalories = calculateTotalCalories(selectedFoods, goal);
+export const calculateRemainingCalories = (tdee, selectedFoods) => {
+  const totalCalories = calculateTotalCalories(selectedFoods);
   return tdee - totalCalories;
 };
 
-// Helper function to get food details with correct portion based on goal
-export const getFoodDetails = (foodName, goal) => {
-  const food = getFoodByName(foodName);
-  if (!food) return null;
-
-  if ((foodName.toLowerCase() === "nasi" || foodName.toLowerCase() === "nasi merah") && goal === "LoseWeight") {
-    return {
-      ...food,
-      unit: "1/2 porsi",
-      calories: Math.round(food.calories / 2)
-    };
-  }
-
-  return food;
+// Helper function to get food details
+export const getFoodDetails = (foodName) => {
+  return getFoodByName(foodName);
 }; 
