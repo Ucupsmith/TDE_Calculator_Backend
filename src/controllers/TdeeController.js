@@ -180,22 +180,26 @@ export const getTdeeHistory = async (req, res) => {
 
 export const getLatestTdeeResultByProfile = async (req, res) => {
   try {
-    const { profileId } = req.query;
-    if (!profileId) {
-      return res.status(400).json({ message: 'profileId is required' });
+    // Get userId from authenticated user
+    const userId = req.user.id; 
+
+    if (!userId) {
+      return res.status(401).json({ message: 'User not authenticated' });
     }
+
     const latest = await prisma.tdeeCalculation.findFirst({
-      where: { profileId: Number(profileId) },
+      where: { userId: Number(userId) }, // Use userId instead of profileId
       orderBy: { createdAt: 'desc' }
     });
     if (!latest) {
-      return res.status(404).json({ message: 'No TDEE result found' });
+      return res.status(404).json({ message: 'No TDEE result found for this user' }); // More specific message
     }
-    res.json({ tdee: latest.tdee_result, lastCalculated: latest.createdAt });
+    // Also include the goal in the response, as it's needed in the frontend
+    res.json({ tdee: latest.tdee_result, lastCalculated: latest.createdAt, goal: latest.goal }); 
   } catch (error) {
     res
       .status(500)
-      .json({ message: 'Error fetching TDEE result', error: error.message });
+      .json({ message: 'Error fetching latest TDEE result', error: error.message });
   }
 };
 
