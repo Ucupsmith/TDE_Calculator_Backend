@@ -98,7 +98,9 @@ export const saveTdeeToHomeController = async (req, res) => {
   if (!userId || !tdee_result || !goal) {
     return res
       .status(400)
-      .json({ message: 'Missing required fields: userId, tdee_result, or goal' });
+      .json({
+        message: 'Missing required fields: userId, tdee_result, or goal'
+      });
   }
 
   try {
@@ -181,7 +183,7 @@ export const getTdeeHistory = async (req, res) => {
 export const getLatestTdeeResultByProfile = async (req, res) => {
   try {
     // Get userId from authenticated user
-    const userId = req.user.id; 
+    const userId = req.user.id;
 
     if (!userId) {
       return res.status(401).json({ message: 'User not authenticated' });
@@ -192,14 +194,23 @@ export const getLatestTdeeResultByProfile = async (req, res) => {
       orderBy: { createdAt: 'desc' }
     });
     if (!latest) {
-      return res.status(404).json({ message: 'No TDEE result found for this user' }); // More specific message
+      return res
+        .status(404)
+        .json({ message: 'No TDEE result found for this user' }); // More specific message
     }
     // Also include the goal in the response, as it's needed in the frontend
-    res.json({ tdee: latest.tdee_result, lastCalculated: latest.createdAt, goal: latest.goal }); 
+    res.json({
+      tdee: latest.tdee_result,
+      lastCalculated: latest.createdAt,
+      goal: latest.goal
+    });
   } catch (error) {
     res
       .status(500)
-      .json({ message: 'Error fetching latest TDEE result', error: error.message });
+      .json({
+        message: 'Error fetching latest TDEE result',
+        error: error.message
+      });
   }
 };
 
