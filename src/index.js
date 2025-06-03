@@ -8,8 +8,7 @@ import { notificationRoutes } from './routes/notificationRoutes.js';
 import { articleRoutes } from './routes/articleRoutes.js';
 import foodRoutes from './routes/foodRoutes.js';
 import mealPlanRoutes from './routes/mealPlanRoutes.js';
-import { authRoutes } from './routes/authRoutes.js';  
-
+import { authRoutes } from './routes/authRoutes.js';
 
 dotenv.config();
 const app = express();
@@ -24,7 +23,7 @@ app.use((err, req, res, next) => {
   console.error('Unhandled Backend Error:', err.stack); // Log error ke console backend
   res.status(500).json({
     status: 'error',
-    message: 'An unexpected error occurred on the server.',
+    message: 'An unexpected error occurred on the server.'
     // Di lingkungan produksi, hindari mengirim detail error sensitif ke klien
     // Untuk debugging lokal, bisa disertakan: error: err.message
   });

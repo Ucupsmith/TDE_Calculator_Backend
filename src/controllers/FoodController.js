@@ -3,8 +3,8 @@ import {
   getFoodByName,
   calculateTotalCalories,
   calculateRemainingCalories
-} from "../models/FoodModel.js";
-import prisma from "../../prisma/prismaClient.js";
+} from '../models/FoodModel.js';
+import prisma from '../../prisma/prismaClient.js';
 
 // Get all available foods
 export const getAllFoodsController = (req, res) => {
@@ -12,7 +12,9 @@ export const getAllFoodsController = (req, res) => {
     const foods = getAllFoods();
     res.json(foods);
   } catch (error) {
-    res.status(500).json({ message: "Error fetching foods", error: error.message });
+    res
+      .status(500)
+      .json({ message: 'Error fetching foods', error: error.message });
   }
 };
 
@@ -22,11 +24,13 @@ export const getFoodByNameController = (req, res) => {
     const { name } = req.params;
     const food = getFoodByName(name);
     if (!food) {
-      return res.status(404).json({ message: "Food not found" });
+      return res.status(404).json({ message: 'Food not found' });
     }
     res.json(food);
   } catch (error) {
-    res.status(500).json({ message: "Error fetching food", error: error.message });
+    res
+      .status(500)
+      .json({ message: 'Error fetching food', error: error.message });
   }
 };
 
@@ -34,7 +38,7 @@ export const getFoodByNameController = (req, res) => {
 export const getMealPlanFoodsController = (req, res) => {
   try {
     const foods = getAllFoods();
-    
+
     // Group foods by name to handle multiple portions
     const groupedFoods = foods.reduce((acc, food) => {
       if (!acc[food.name]) {
@@ -44,25 +48,25 @@ export const getMealPlanFoodsController = (req, res) => {
           portions: []
         };
       }
-      
+
       acc[food.name].portions.push({
         unit: food.unit,
         calories: food.calories
       });
-      
+
       return acc;
     }, {});
-    
+
     // Convert to array and sort by name
-    const formattedFoods = Object.values(groupedFoods).sort((a, b) => 
+    const formattedFoods = Object.values(groupedFoods).sort((a, b) =>
       a.name.localeCompare(b.name)
     );
-    
+
     res.json(formattedFoods);
   } catch (error) {
-    res.status(500).json({ 
-      message: "Error fetching meal plan foods", 
-      error: error.message 
+    res.status(500).json({
+      message: 'Error fetching meal plan foods',
+      error: error.message
     });
   }
 };
@@ -72,12 +76,14 @@ export const calculateTotalCaloriesController = (req, res) => {
   try {
     const { selectedFoods } = req.body;
     if (!selectedFoods || !Array.isArray(selectedFoods)) {
-      return res.status(400).json({ message: "Invalid selected foods data" });
+      return res.status(400).json({ message: 'Invalid selected foods data' });
     }
     const totalCalories = calculateTotalCalories(selectedFoods);
     res.json({ totalCalories });
   } catch (error) {
-    res.status(500).json({ message: "Error calculating calories", error: error.message });
+    res
+      .status(500)
+      .json({ message: 'Error calculating calories', error: error.message });
   }
 };
 
@@ -86,38 +92,42 @@ export const calculateRemainingCaloriesController = (req, res) => {
   try {
     const { tdee, selectedFoods } = req.body;
     if (!tdee || !selectedFoods || !Array.isArray(selectedFoods)) {
-      return res.status(400).json({ message: "Invalid input data" });
+      return res.status(400).json({ message: 'Invalid input data' });
     }
     const remainingCalories = calculateRemainingCalories(tdee, selectedFoods);
     res.json({ remainingCalories });
   } catch (error) {
-    res.status(500).json({ message: "Error calculating remaining calories", error: error.message });
+    res.status(500).json({
+      message: 'Error calculating remaining calories',
+      error: error.message
+    });
   }
 };
 
 // Add custom food to meal plan
 export const addCustomFoodController = (req, res) => {
   try {
-    const { name, calories, unit, quantity = 1 } = req.body;
+    const { name, calories, quantity = 1 } = req.body;
 
     // Validate required fields
-    if (!name || calories === undefined || !unit) {
+    if (!name || calories === undefined) {
       return res.status(400).json({
-        message: "Missing required fields. Required: name, calories, unit"
+        message: 'Missing required fields. Required: name, calories, unit'
       });
     }
 
     // Validate data types
-    if (typeof name !== 'string' || typeof calories !== 'number' || typeof unit !== 'string') {
+    if (typeof name !== 'string' || typeof calories !== 'number') {
       return res.status(400).json({
-        message: "Invalid data types. name and unit should be strings, calories should be a number"
+        message:
+          'Invalid data types. name and unit should be strings, calories should be a number'
       });
     }
 
     // Validate calories is positive
     if (calories < 0) {
       return res.status(400).json({
-        message: "Calories cannot be negative"
+        message: 'Calories cannot be negative'
       });
     }
 
@@ -125,18 +135,17 @@ export const addCustomFoodController = (req, res) => {
     const customFood = {
       name,
       calories: calories * quantity, // Total calories based on quantity
-      unit,
       quantity,
       isCustom: true // Flag to identify custom foods
     };
 
     res.status(201).json({
-      message: "Custom food added successfully",
+      message: 'Custom food added successfully',
       data: customFood
     });
   } catch (error) {
     res.status(500).json({
-      message: "Error adding custom food",
+      message: 'Error adding custom food',
       error: error.message
     });
   }
@@ -147,20 +156,20 @@ export const getUserCustomFoodsController = async (req, res) => {
   try {
     const { userId } = req.query;
     if (!userId) {
-      return res.status(400).json({ message: "userId is required" });
+      return res.status(400).json({ message: 'userId is required' });
     }
 
     // Query meal selections for the user
     const mealSelections = await prisma.userMealSelection.findMany({
       where: { userId: Number(userId) },
-      orderBy: { date: 'desc' }
+      orderBy: { selected_date: 'desc' }
     });
 
     // Extract and flatten all custom foods from meal selections
     let customFoods = [];
-    mealSelections.forEach(selection => {
+    mealSelections.forEach((selection) => {
       const foods = JSON.parse(selection.selectedFoods || '[]');
-      foods.forEach(food => {
+      foods.forEach((food) => {
         if (food.isCustom) {
           customFoods.push(food);
         }
@@ -170,7 +179,7 @@ export const getUserCustomFoodsController = async (req, res) => {
     // Remove duplicates by name, unit, and calories
     const uniqueCustomFoods = [];
     const seen = new Set();
-    customFoods.forEach(food => {
+    customFoods.forEach((food) => {
       const key = `${food.name}|${food.unit}|${food.calories}`;
       if (!seen.has(key)) {
         seen.add(key);
@@ -179,20 +188,20 @@ export const getUserCustomFoodsController = async (req, res) => {
     });
 
     // Map to desired format
-    const mappedFoods = uniqueCustomFoods.map(food => ({
+    const mappedFoods = uniqueCustomFoods.map((food) => ({
       name: food.name,
       calories: food.calories,
-      unit: food.unit,
+      quantity: food.quantity,
       isCustom: true
     }));
 
     res.json({
-      message: "Custom foods fetched successfully",
+      message: 'Custom foods fetched successfully',
       data: mappedFoods
     });
   } catch (error) {
     res.status(500).json({
-      message: "Error fetching custom foods",
+      message: 'Error fetching custom foods',
       error: error.message
     });
   }
@@ -202,7 +211,7 @@ export const deleteUserCustomFoodController = async (req, res) => {
   try {
     const { userId, name, unit, calories } = req.body;
     if (!userId || !name || !unit || calories === undefined) {
-      return res.status(400).json({ message: "Missing required fields" });
+      return res.status(400).json({ message: 'Missing required fields' });
     }
 
     const mealSelections = await prisma.userMealSelection.findMany({
@@ -214,7 +223,7 @@ export const deleteUserCustomFoodController = async (req, res) => {
       let foods = JSON.parse(selection.selectedFoods || '[]');
       const originalLength = foods.length;
       foods = foods.filter(
-        food =>
+        (food) =>
           !(
             food.isCustom &&
             food.name === name &&
@@ -232,12 +241,12 @@ export const deleteUserCustomFoodController = async (req, res) => {
     }
 
     res.json({
-      message: "Custom food deleted successfully",
+      message: 'Custom food deleted successfully',
       updatedSelections: updatedCount
     });
   } catch (error) {
     res.status(500).json({
-      message: "Error deleting custom food",
+      message: 'Error deleting custom food',
       error: error.message
     });
   }
@@ -245,9 +254,25 @@ export const deleteUserCustomFoodController = async (req, res) => {
 
 export const updateUserCustomFoodController = async (req, res) => {
   try {
-    const { userId, oldName, oldUnit, oldCalories, newName, newUnit, newCalories } = req.body;
-    if (!userId || !oldName || !oldUnit || oldCalories === undefined || !newName || !newUnit || newCalories === undefined) {
-      return res.status(400).json({ message: "Missing required fields" });
+    const {
+      userId,
+      oldName,
+      oldUnit,
+      oldCalories,
+      newName,
+      newUnit,
+      newCalories
+    } = req.body;
+    if (
+      !userId ||
+      !oldName ||
+      !oldUnit ||
+      oldCalories === undefined ||
+      !newName ||
+      !newUnit ||
+      newCalories === undefined
+    ) {
+      return res.status(400).json({ message: 'Missing required fields' });
     }
 
     const mealSelections = await prisma.userMealSelection.findMany({
@@ -258,7 +283,7 @@ export const updateUserCustomFoodController = async (req, res) => {
     for (const selection of mealSelections) {
       let foods = JSON.parse(selection.selectedFoods || '[]');
       let changed = false;
-      foods = foods.map(food => {
+      foods = foods.map((food) => {
         if (
           food.isCustom &&
           food.name === oldName &&
@@ -285,13 +310,13 @@ export const updateUserCustomFoodController = async (req, res) => {
     }
 
     res.json({
-      message: "Custom food updated successfully",
+      message: 'Custom food updated successfully',
       updatedSelections: updatedCount
     });
   } catch (error) {
     res.status(500).json({
-      message: "Error updating custom food",
+      message: 'Error updating custom food',
       error: error.message
     });
   }
-}; 
+};
