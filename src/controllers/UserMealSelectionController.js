@@ -5,465 +5,284 @@ import {
   getMealSelectionsByDate,
   getCurrentDayCalories
 } from '../models/UserMealSelectionModel.js';
-import { getFoodDetails } from '../models/FoodModel.js';
+// Removed import for FoodModel as we will save food details directly
+// import { getFoodDetails } from '../models/FoodModel.js';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-export const createMealSelection = async (req, res) => {
-  try {
-    const { userId, tdeeId, selectedFoods, date } = req.body;
-
-    if (!userId || !tdeeId || !selectedFoods || !Array.isArray(selectedFoods)) {
-      return res.status(400).json({
-        message:
-          'Invalid input data. Required: userId, tdeeId, and selectedFoods array'
-      });
-    }
-
-    // Get TDEE calculation to get the goal
-    const tdeeCalculation = await prisma.tdeeCalculation.findUnique({
-      where: { tdeeId: tdeeId }
-    });
-
-    if (!tdeeCalculation) {
-      return res.status(404).json({
-        message: 'TDEE calculation not found'
-      });
-    }
-
-    // Get food details with correct portions based on goal
-    const foodsWithDetails = selectedFoods
-      .map((food) => {
-        const foodFromDatabase = getFoodDetails(
-          food.name,
-          tdeeCalculation.goal
-        );
-
-        // If food is found in the database, use those details
-        if (foodFromDatabase) {
-          return { ...food, details: foodFromDatabase };
-        } else {
-          // If not found in database, assume it's a custom food and use provided details
-          // Ensure necessary fields are present, assuming frontend sends them
-          if (
-            !food.name ||
-            food.calories === undefined ||
-            food.unit === undefined ||
-            food.quantity === undefined
-          ) {
-            console.error('Missing details for custom food:', food);
-            // Depending on desired behavior, you might skip this food, return a default, or throw an error
-            return null; // Or handle as needed
-          }
-          // Store custom food details as they are, perhaps in a 'details' sub-object for consistency
-          return {
-            ...food,
-            details: {
-              name: food.name,
-              calories: food.calories / food.quantity, // Store calories per unit if total calories for quantity is sent
-              unit: food.unit
-              // Add other custom fields if needed
-            }
-          };
-        }
-      })
-      .filter((food) => food !== null); // Filter out any foods that couldn't be processed
-
-    // Calculate total calories based on the potentially modified foodsWithDetails array
-    // This calculation needs to handle both database foods (using details.calories) and custom foods (using the provided food.calories or recalculating from details if stored per unit)
-    const totalCalories = foodsWithDetails.reduce((total, food) => {
-      if (
-        food.details &&
-        food.details.calories !== undefined &&
-        food.quantity !== undefined
-      ) {
-        // If details are available (either from DB or custom stored in details), use them
-        // Assuming details.calories is calories per unit
-        return total + food.details.calories * food.quantity;
-      } else if (food.calories !== undefined && food.quantity !== undefined) {
-        // Fallback: if details not structured as expected but food.calories is present (maybe total calories for quantity was sent directly)
-        console.warn('Using direct food.calories for total calculation:', food);
-        return total + food.calories;
-      }
-      console.error('Could not calculate calories for food:', food);
-      return total; // Skip if calories or quantity are missing
-    }, 0);
-
-    const mealSelection = await createUserMealSelection({
-      userId,
-      tdeeId,
-      selectedFoods: foodsWithDetails,
-      date: date ? new Date(date) : new Date()
-    });
-
-    res.status(201).json({
-      message: 'Meal selection saved successfully',
-      data: mealSelection
-    });
-  } catch (error) {
-    res.status(500).json({
-      message: 'Error saving meal selection',
-      error: error.message
-    });
-  }
-};
-
+// Get today's meal plan data
 export const getCurrentDayCaloriesController = async (req, res) => {
-  try {
-    const { userId, tdeeId } = req.query;
-
-    if (!userId || !tdeeId) {
-      return res.status(400).json({
-        message: 'userId and tdeeId are required'
-      });
-    }
-
-    const calories = await getCurrentDayCalories(
-      Number(userId),
-      Number(tdeeId)
-    );
-    res.json(calories);
-  } catch (error) {
-    res.status(500).json({
-      message: 'Error fetching current day calories',
-      error: error.message
-    });
-  }
-};
-
-export const getMealSelections = async (req, res) => {
-  try {
-    const { userId, tdeeId, date } = req.query;
-
-    if (!userId || !tdeeId) {
-      return res.status(400).json({
-        message: 'userId and tdeeId are required'
-      });
-    }
-
-    let selections;
-    if (date) {
-      // Get selections for specific date
-      selections = await getMealSelectionsByDate(
-        Number(userId),
-        Number(tdeeId),
-        new Date(date)
-      );
-    } else {
-      // Get all selections
-      selections = await getUserMealSelections(Number(userId), Number(tdeeId));
-    }
-
-    res.json(selections);
-  } catch (error) {
-    res.status(500).json({
-      message: 'Error fetching meal selections',
-      error: error.message
-    });
-  }
-};
-
-export const getLatestSelection = async (req, res) => {
-  try {
-    const { userId, tdeeId } = req.query;
-
-    if (!userId || !tdeeId) {
-      return res.status(400).json({
-        message: 'userId and tdeeId are required'
-      });
-    }
-
-    const selection = await getLatestMealSelection(
-      Number(userId),
-      Number(tdeeId)
-    );
-
-    if (!selection) {
-      return res.status(404).json({
-        message: 'No meal selection found'
-      });
-    }
-
-    res.json(selection);
-  } catch (error) {
-    res.status(500).json({
-      message: 'Error fetching latest meal selection',
-      error: error.message
-    });
-  }
-};
-
-// Get meal plan history with formatted data
-export const getMealPlanHistory = async (req, res) => {
-  try {
-    const { userId, tdeeId, startDate, endDate } = req.query;
-
-    if (!userId || !tdeeId) {
-      return res.status(400).json({
-        message: 'userId and tdeeId are required'
-      });
-    }
-
-    // Set default date range if not provided (last 7 days)
-    const end = endDate ? new Date(endDate) : new Date();
-    const start = startDate
-      ? new Date(startDate)
-      : new Date(end.getTime() - 7 * 24 * 60 * 60 * 1000);
-
-    // Get TDEE calculation
-    const tdeeCalculation = await prisma.tdeeCalculation.findUnique({
-      where: { tdeeId: Number(tdeeId) }
-    });
-
-    if (!tdeeCalculation) {
-      return res.status(404).json({
-        message: 'TDEE calculation not found'
-      });
-    }
-
-    // Get meal selections within date range
-    const selections = await prisma.userMealSelection.findMany({
-      where: {
-        userId: Number(userId),
-        tdeeId: Number(tdeeId),
-        date: {
-          gte: start,
-          lte: end
-        }
-      },
-      orderBy: {
-        date: 'desc'
-      }
-    });
-
-    // Format the data for frontend
-    const formattedHistory = selections.map((selection) => ({
-      id: selection.id,
-      date: selection.date,
-      selectedFoods: JSON.parse(selection.selectedFoods),
-      totalCalories: selection.totalCalories,
-      remainingCalories: selection.remainingCalories,
-      goal: tdeeCalculation.goal
-    }));
-
-    res.json({
-      history: formattedHistory,
-      goal: tdeeCalculation.goal,
-      tdee: tdeeCalculation.tdee_result
-    });
-  } catch (error) {
-    res.status(500).json({
-      message: 'Error fetching meal plan history',
-      error: error.message
-    });
-  }
-};
-
-// Update meal selection
-export const updateMealSelection = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { selectedFoods } = req.body;
-
-    if (!selectedFoods || !Array.isArray(selectedFoods)) {
-      return res.status(400).json({
-        message: 'Invalid selected foods data'
-      });
-    }
-
-    // Get the meal selection to update
-    const existingSelection = await prisma.userMealSelection.findUnique({
-      where: { id: Number(id) }
-    });
-
-    if (!existingSelection) {
-      return res.status(404).json({
-        message: 'Meal selection not found'
-      });
-    }
-
-    // Get TDEE calculation
-    const tdeeCalculation = await prisma.tdeeCalculation.findUnique({
-      where: { tdeeId: existingSelection.tdeeId }
-    });
-
-    if (!tdeeCalculation) {
-      return res.status(404).json({
-        message: 'TDEE calculation not found'
-      });
-    }
-
-    // === Start of modified logic for processing selectedFoods ===
-    const foodsWithDetails = selectedFoods
-      .map((food) => {
-        const foodFromDatabase = getFoodDetails(
-          food.name,
-          tdeeCalculation.goal
-        ); // This call already applies the nasi/lose weight logic for DB foods
-
-        // If food is found in the database, use those details
-        if (foodFromDatabase) {
-          return { ...food, details: foodFromDatabase }; // foodFromDatabase already has correct calories/unit for nasi LW
-        } else {
-          // If not found in database, assume it's a custom food and use provided details
-          // Ensure necessary fields are present, assuming frontend sends them
-          if (
-            !food.name ||
-            food.calories === undefined ||
-            food.unit === undefined ||
-            food.quantity === undefined
-          ) {
-            console.error('Missing details for custom food in update:', food);
-            // Depending on desired behavior, you might skip this food, return a default, or throw an error
-            return null; // Or handle as needed
-          }
-          // Store custom food details as they are, perhaps in a 'details' sub-object for consistency
-          return {
-            ...food,
-            details: {
-              name: food.name,
-              calories: food.calories / food.quantity, // Store calories per unit if total calories for quantity is sent
-              unit: food.unit
-              // Add other custom fields if needed
-            }
-          };
-        }
-      })
-      .filter((food) => food !== null); // Filter out any foods that couldn't be processed
-
-    // Calculate new total calories based on the potentially modified foodsWithDetails array
-    const totalCalories = foodsWithDetails.reduce((total, food) => {
-      if (
-        food.details &&
-        food.details.calories !== undefined &&
-        food.quantity !== undefined
-      ) {
-        // If details are available (either from DB or custom stored in details), use them
-        // Assuming details.calories is calories per unit
-        return total + food.details.calories * food.quantity;
-      } else if (food.calories !== undefined && food.quantity !== undefined) {
-        // Fallback: if details not structured as expected but food.calories is present (maybe total calories for quantity was sent directly)
-        console.warn(
-          'Using direct food.calories for total calculation in update:',
-          food
-        );
-        return total + food.calories;
-      }
-      console.error('Could not calculate calories for food in update:', food);
-      return total; // Skip if calories or quantity are missing
-    }, 0);
-    // === End of modified logic ===
-
-    // Get all selections for the same day
-    const startOfDay = new Date(existingSelection.date);
-    startOfDay.setHours(0, 0, 0, 0);
-
-    const endOfDay = new Date(existingSelection.date);
-    endOfDay.setHours(23, 59, 59, 999);
-
-    const daySelections = await prisma.userMealSelection.findMany({
-      where: {
-        userId: existingSelection.userId,
-        tdeeId: existingSelection.tdeeId,
-        date: {
-          gte: startOfDay,
-          lte: endOfDay
-        },
-        id: {
-          not: Number(id) // Exclude current selection
-        }
-      },
-      orderBy: {
-        date: 'asc'
-      }
-    });
-
-    // Calculate remaining calories
-    let remainingCalories;
-    if (daySelections.length === 0) {
-      remainingCalories = tdeeCalculation.tdee_result - totalCalories;
-    } else {
-      const lastSelection = daySelections[daySelections.length - 1];
-      remainingCalories = lastSelection.remainingCalories - totalCalories;
-    }
-
-    // Update the meal selection
-    const updatedSelection = await prisma.userMealSelection.update({
-      where: { id: Number(id) },
-      data: {
-        selectedFoods: JSON.stringify(foodsWithDetails),
-        totalCalories,
-        remainingCalories
-      }
-    });
-
-    res.json({
-      message: 'Meal selection updated successfully',
-      data: {
-        ...updatedSelection,
-        selectedFoods: JSON.parse(updatedSelection.selectedFoods)
-      }
-    });
-  } catch (error) {
-    res.status(500).json({
-      message: 'Error updating meal selection',
-      error: error.message
-    });
-  }
-};
-
-// Endpoint baru: GET /user/v1/meal-plans/summary?userId=...&tdeeId=...
-export const getMealPlanSummary = async (req, res) => {
   try {
     const { userId } = req.query;
     if (!userId) {
-      return res.status(400).json({ message: 'tdeeId is required' });
+      return res.status(400).json({ message: 'User ID is required' });
     }
-    const mealPlan = await prisma.mealPlan.findFirst({
-      where: { userId: Number(userId) },
-      include: {
-        tdeeCalculation: true
+
+    // Get today's date at midnight
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Get user's TDEE goal
+    const userTdee = await prisma.tdeeCalculation.findFirst({
+      where: {
+        userId: Number(userId),
+        isActive: true
+      },
+      orderBy: {
+        createdAt: 'desc'
       }
     });
-    console.log('Meal Plan:', mealPlan);
 
-    if (!mealPlan || !mealPlan.tdeeCalculation) {
-      return res.status(404).json({ message: 'Meal plan or TDEE not found' });
+    if (!userTdee) {
+      return res.status(404).json({ message: 'No active TDEE found for user' });
     }
 
-    return res.json({
-      goal: mealPlan.goal,
-      tdee: mealPlan.tdeeCalculation.tdee_result
+    // Get today's meal history
+    const todayMealHistory = await prisma.dailyMealHistory.findFirst({
+      where: {
+        userId: Number(userId),
+        date: {
+          gte: today,
+          lt: new Date(today.getTime() + 24 * 60 * 60 * 1000)
+        }
+      },
+      include: {
+        foods: true
+      }
+    });
+
+    // Calculate total calories and remaining
+    const totalCalories = todayMealHistory?.totalCalories || 0;
+    const calorieRemaining = userTdee.tdee - totalCalories;
+
+    res.json({
+      totalCalories,
+      calorieRemaining,
+      tdeeGoal: userTdee.tdee,
+      goal: userTdee.goal
     });
   } catch (error) {
+    console.error('Error getting current day calories:', error);
     res.status(500).json({
-      message: 'Error fetching meal plan summary',
+      message: 'Error getting current day calories',
       error: error.message
     });
   }
 };
 
-export const getMealPlanByTdeeId = async (req, res) => {
+// Add food to today's meal plan
+export const createMealSelection = async (req, res) => {
   try {
-    const { tdeeId } = req.query;
-    if (!tdeeId) {
-      return res.status(400).json({ message: 'tdeeId is required' });
+    // Accept foods array with potential custom food data
+    const { userId, foods } = req.body;
+
+    if (!userId || !foods || !Array.isArray(foods) || foods.length === 0) {
+      return res.status(400).json({
+        message: 'Missing required fields: userId, foods (array of { foodId: number, quantity: number } OR { isCustom: true, customName: string, customCalories: number, quantity: number })'
+      });
     }
-    const tdeeCalculation = await prisma.tdeeCalculation.findUnique({
-      where: { tdeeId: Number(tdeeId) }
+
+    // Get today's date at midnight
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Get user's TDEE goal
+    const userTdee = await prisma.tdeeCalculation.findFirst({
+      where: {
+        userId: Number(userId),
+        isActive: true
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
     });
-    if (!tdeeCalculation) {
-      return res.status(404).json({ message: 'TDEE calculation not found' });
+
+    if (!userTdee) {
+      return res.status(404).json({ message: 'No active TDEE found for user' });
     }
-    return res.json({
-      goal: tdeeCalculation.goal,
-      tdee: tdeeCalculation.tdee_result
+
+    // Get or create today's meal history
+    let todayMealHistory = await prisma.dailyMealHistory.findFirst({
+      where: {
+        userId: Number(userId),
+        date: {
+          gte: today,
+          lt: new Date(today.getTime() + 24 * 60 * 60 * 1000)
+        }
+      }
     });
+
+    if (!todayMealHistory) {
+      todayMealHistory = await prisma.dailyMealHistory.create({
+        data: {
+          userId: Number(userId),
+          tdeeId: userTdee.tdeeId,
+          date: today,
+          totalCalories: 0,
+          calorieRemaining: userTdee.tdee
+        }
+      });
+    }
+
+    let totalCaloriesAdded = 0;
+    const foodEntriesToCreate = [];
+
+    // Process each food item from the array
+    for (const foodItem of foods) {
+      // Validate required fields for both types
+      if (typeof foodItem.quantity !== 'number' || foodItem.quantity <= 0) {
+        console.warn(`Invalid quantity received: ${JSON.stringify(foodItem)}`);
+        continue; // Skip invalid item
+      }
+
+      let caloriesForItem = 0;
+
+      if (foodItem.isCustom) {
+        // Process custom food
+        if (!foodItem.customName || typeof foodItem.customCalories !== 'number' || foodItem.customCalories < 0) {
+          console.warn(`Invalid custom food data received: ${JSON.stringify(foodItem)}`);
+          continue; // Skip invalid custom food
+        }
+
+        caloriesForItem = foodItem.customCalories * foodItem.quantity;
+
+        foodEntriesToCreate.push({
+          mealHistoryId: todayMealHistory.id,
+          isCustom: true,
+          customName: foodItem.customName,
+          customCalories: foodItem.customCalories,
+          quantity: foodItem.quantity,
+          // foodId and food relation will be null
+        });
+
+      } else {
+        // Process standard food using foodId
+        if (!foodItem.foodId) {
+          console.warn(`Invalid standard food data (missing foodId) received: ${JSON.stringify(foodItem)}`);
+          continue; // Skip invalid standard food
+        }
+
+        // Get food details to calculate calories
+        const food = await prisma.food.findUnique({
+          where: { id: Number(foodItem.foodId) }
+        });
+
+        if (!food) {
+          console.warn(`Standard Food with ID ${foodItem.foodId} not found. Skipping.`);
+          continue; // Skip this food item
+        }
+
+        caloriesForItem = food.calories * foodItem.quantity;
+
+        foodEntriesToCreate.push({
+          mealHistoryId: todayMealHistory.id,
+          foodId: Number(foodItem.foodId),
+          quantity: foodItem.quantity,
+          isCustom: false,
+          // customName and customCalories will be null
+        });
+      }
+
+      totalCaloriesAdded += caloriesForItem;
+    }
+
+    // Create all valid food entries in a single batch (more efficient)
+    if (foodEntriesToCreate.length > 0) {
+      await prisma.dailyMealFoodEntry.createMany({ // Use createMany for efficiency
+        data: foodEntriesToCreate
+      });
+    }
+
+    // Update total calories and remaining ONLY if calories were added
+    if (totalCaloriesAdded > 0) {
+      const updatedHistory = await prisma.dailyMealHistory.update({
+        where: { id: todayMealHistory.id },
+        data: {
+          totalCalories: {
+            increment: totalCaloriesAdded
+          },
+          calorieRemaining: {
+            decrement: totalCaloriesAdded
+          }
+        },
+        include: {
+          foods: { // Include foods to potentially return updated list if needed in the future
+            orderBy: { createdAt: 'asc' }, // Order food entries for consistency
+            include: { food: true } // Include relation to standard food data
+          }
+        }
+      });
+
+      // Simplified response as requested
+      res.status(201).json({
+        totalCalories: updatedHistory.totalCalories,
+        calorieRemaining: updatedHistory.calorieRemaining
+        // tdeeGoal and goal are not included in this simplified response
+      });
+    } else {
+      // If no valid foods were processed, return current history data without updating
+      // Still include totalCalories and calorieRemaining
+      res.status(200).json({
+        totalCalories: todayMealHistory.totalCalories,
+        calorieRemaining: todayMealHistory.calorieRemaining
+      });
+    }
+
   } catch (error) {
+    console.error('Error adding food to meal plan:', error);
     res.status(500).json({
-      message: 'Error fetching meal plan summary',
+      message: 'Error adding food to meal plan',
       error: error.message
     });
   }
+};
+
+// Get available foods for meal plan
+export const getMealPlanFoods = async (req, res) => {
+  try {
+    const foods = await prisma.food.findMany({
+      orderBy: {
+        name: 'asc'
+      }
+    });
+
+    res.json(foods);
+  } catch (error) {
+    console.error('Error getting meal plan foods:', error);
+    res.status(500).json({
+      message: 'Error getting meal plan foods',
+      error: error.message
+    });
+  }
+};
+
+// Keep other handlers for now, will need to adjust them later to use new models
+export const getMealSelections = async (req, res) => {
+   // This handler needs to be updated to query DailyMealHistory
+  res.status(501).json({ message: 'Not Implemented - getMealSelections needs update' });
+};
+
+export const getLatestSelection = async (req, res) => {
+   // This handler needs to be updated to query DailyMealHistory
+  res.status(501).json({ message: 'Not Implemented - getLatestSelection needs update' });
+};
+
+// This handler needs to be updated to query DailyMealHistory
+export const getMealPlanHistory = async (req, res) => {
+    res.status(501).json({ message: 'Not Implemented - getMealPlanHistory needs update' });
+};
+
+// This handler needs to be updated to update DailyMealHistory and DailyMealFoodEntry
+export const updateMealSelection = async (req, res) => {
+   res.status(501).json({ message: 'Not Implemented - updateMealSelection needs update' });
+};
+
+// These handlers might need adjustment or be removed/replaced
+export const getMealPlanSummary = async (req, res) => {
+   res.status(501).json({ message: 'Not Implemented - getMealPlanSummary needs update' });
+};
+
+export const getMealPlanByTdeeId = async (req, res) => {
+   res.status(501).json({ message: 'Not Implemented - getMealPlanByTdeeId needs update' });
 };

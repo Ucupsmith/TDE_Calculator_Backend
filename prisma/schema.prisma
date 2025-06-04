@@ -19,6 +19,7 @@ model User {
   tdeeCalculations   TdeeCalculation[]
   profile            Profile?
   userMealSelections UserMealSelection[]
+  dailyMealHistory   DailyMealHistory[]
 
   @@map("users")
 }
@@ -40,6 +41,7 @@ model TdeeCalculation {
   mealPlan           MealPlan[]
   savedprofile       savedprofile[]
   userMealSelections UserMealSelection[]
+  dailyMealHistory   DailyMealHistory[]
 
   @@map("tdee_calculations")
 }
@@ -234,4 +236,39 @@ enum Status {
   Pending
   Published
   Rejected
+}
+
+model DailyMealHistory {
+  id             Int       @id @default(autoincrement())
+  userId         Int
+  user           User      @relation(fields: [userId], references: [id])
+  tdeeId         Int
+  tdee           TdeeCalculation @relation(fields: [tdeeId], references: [id])
+  date           DateTime  @default(now())
+  totalCalories  Float
+  calorieRemaining Float
+  foods          DailyMealFoodEntry[]
+
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([userId, date])
+}
+
+model DailyMealFoodEntry {
+  id             Int       @id @default(autoincrement())
+  mealHistoryId  Int
+  mealHistory    DailyMealHistory @relation(fields: [mealHistoryId], references: [id])
+  foodId         Int?      // Make foodId optional
+  food           Food?     @relation(fields: [foodId], references: [id]) // Relation is now optional
+  quantity       Float
+  isCustom       Boolean   @default(false) // Add flag for custom food
+  customName     String?   // Add field for custom food name
+  customCalories Float?    // Add field for custom food calories (per unit/quantity)
+
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([mealHistoryId])
+  @@index([foodId])
 }
