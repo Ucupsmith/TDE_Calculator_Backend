@@ -200,6 +200,8 @@ model food {
   imageUrl  String
   createdAt DateTime @default(now())
   updatedAt DateTime
+
+  dailyMealFoodEntries DailyMealFoodEntry[] @relation("DailyMealFoodEntryToFood")
 }
 
 enum Gender {
@@ -241,9 +243,9 @@ enum Status {
 model DailyMealHistory {
   id             Int       @id @default(autoincrement())
   userId         Int
-  user           User      @relation(fields: [userId], references: [id])
+  user           User      @relation(fields: [userId], references: [userId])
   tdeeId         Int
-  tdee           TdeeCalculation @relation(fields: [tdeeId], references: [id])
+  tdee           TdeeCalculation @relation(fields: [tdeeId], references: [tdeeId])
   date           DateTime  @default(now())
   totalCalories  Float
   calorieRemaining Float
@@ -260,7 +262,7 @@ model DailyMealFoodEntry {
   mealHistoryId  Int
   mealHistory    DailyMealHistory @relation(fields: [mealHistoryId], references: [id])
   foodId         Int?      // Make foodId optional
-  food           Food?     @relation(fields: [foodId], references: [id]) // Relation is now optional
+  food           food?     @relation("DailyMealFoodEntryToFood", fields: [foodId], references: [id]) // Added explicit relation name
   quantity       Float
   isCustom       Boolean   @default(false) // Add flag for custom food
   customName     String?   // Add field for custom food name
