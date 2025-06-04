@@ -270,7 +270,74 @@ export const getLatestSelection = async (req, res) => {
 
 // This handler needs to be updated to query DailyMealHistory
 export const getMealPlanHistory = async (req, res) => {
-    res.status(501).json({ message: 'Not Implemented - getMealPlanHistory needs update' });
+  try {
+    const { userId } = req.query; // Assuming userId is passed as a query parameter
+
+    if (!userId) {
+      return res.status(400).json({ message: 'User ID is required' });
+    }
+
+    // Fetch daily meal history for the user, ordered by date descending
+    const history = await prisma.dailyMealHistory.findMany({
+      where: {
+        userId: Number(userId),
+      },
+      orderBy: {
+        date: 'desc', // Show most recent history first
+      },
+      include: {
+        // Include the food entries for each day
+        foods: {
+          orderBy: {
+             createdAt: 'asc' // Order food entries within a day
+          },
+          include: {
+            // For standard foods, include the food details
+            food: true,
+          },
+        },
+        // Include the related TDEE calculation for goal and TDEE result
+        tdee: true, // Include the related TdeeCalculation
+      },
+    });
+
+    // Format the response data
+    // We will transform the Prisma result into a cleaner structure for the frontend
+    const formattedHistory = history.map(day => ({
+      id: day.id, // DailyHistory ID
+      date: day.date, // Date of the history entry
+      totalCalories: day.totalCalories,
+      calorieRemaining: day.calorieRemaining,
+      tdeeResult: day.tdee.tdee, // Get TDEE result from related TDEE calculation
+      goal: day.tdee.goal, // Get goal from related TDEE calculation
+      foods: day.foods.map(foodEntry => ({
+        // Use standard food details if available, otherwise use custom food details
+        id: foodEntry.id, // DailyMealFoodEntry ID
+        // Include foodId only if it's a standard food
+        foodId: foodEntry.foodId || undefined, // Use undefined if null
+        name: foodEntry.isCustom ? foodEntry.customName : foodEntry.food?.name, // Use customName or food name
+        calories: foodEntry.isCustom ? foodEntry.customCalories : foodEntry.food?.calories, // Calories per quantity unit
+        unit: foodEntry.isCustom ? undefined : foodEntry.food?.unit, // Unit for standard food
+        imageUrl: foodEntry.isCustom ? undefined : foodEntry.food?.imageUrl, // imageUrl for standard food
+        quantity: foodEntry.quantity,
+        isCustom: foodEntry.isCustom,
+        // Include custom fields only if it's a custom food
+        customName: foodEntry.isCustom ? foodEntry.customName : undefined,
+        customCalories: foodEntry.isCustom ? foodEntry.customCalories : undefined,
+      })),
+      createdAt: day.createdAt,
+      updatedAt: day.updatedAt,
+    }));
+
+    res.json(formattedHistory);
+
+  } catch (error) {
+    console.error('Error getting meal plan history:', error);
+    res.status(500).json({
+      message: 'Error getting meal plan history',
+      error: error.message,
+    });
+  }
 };
 
 // This handler needs to be updated to update DailyMealHistory and DailyMealFoodEntry
