@@ -7,6 +7,7 @@ import {
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { PrismaClient } from '@prisma/client';
+import { getMealHistoryForUser } from '../models/MealHistoryModel.js';
 
 const JWT_SECRET = process.env.JWT_TOKEN;
 const prisma = new PrismaClient();
@@ -130,5 +131,20 @@ export const login = async (req, res) => {
     });
   } catch (error) {
     return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+export const getUserMealHistory = async (req, res) => {
+  const { userId } = req.params;
+  // In a real application, you'd likely get the userId from the authenticated user's token/session
+
+  try {
+    const history = await getMealHistoryForUser(parseInt(userId));
+    res.status(200).json({
+      message: 'Meal history retrieved successfully',
+      data: history,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message || 'Error fetching meal history' });
   }
 };
