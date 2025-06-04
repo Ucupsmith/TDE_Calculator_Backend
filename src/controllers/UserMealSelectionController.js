@@ -306,10 +306,12 @@ export const getMealPlanHistory = async (req, res) => {
     const formattedHistory = history.map(day => ({
       id: day.id, // DailyHistory ID
       date: day.date, // Date of the history entry
-      totalCalories: day.totalCalories,
-      calorieRemaining: day.calorieRemaining,
-      tdeeResult: day.tdee.tdee, // Get TDEE result from related TDEE calculation
-      goal: day.tdee.goal, // Get goal from related TDEE calculation
+      // Provide default 0 if totalCalories or calorieRemaining is null
+      totalCalories: day.totalCalories ?? 0, // Provide default 0 if null
+      calorieRemaining: day.calorieRemaining ?? 0, // Provide default 0 if null
+      // Safely access tdeeResult and goal, provide default if tdee relation is null
+      tdeeResult: day.tdee ? day.tdee.tdee : 0, // Use 0 or a suitable default if tdee is null
+      goal: day.tdee ? day.tdee.goal : 'N/A', // Use 'N/A' or a suitable default if tdee is null
       foods: day.foods.map(foodEntry => ({
         // Use standard food details if available, otherwise use custom food details
         id: foodEntry.id, // DailyMealFoodEntry ID
