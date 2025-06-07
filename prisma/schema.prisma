@@ -93,7 +93,7 @@ model MealPlan {
   meal_plans      Int             @id @default(autoincrement())
   admin           Admin           @relation(fields: [adminId], references: [adminId])
   profile         Profile         @relation(fields: [profileId], references: [profileId])
-  tdeeCalculation TdeeCalculation @relation(fields: [tdeeId], references: [tdeeId])
+  tdeeCalculation TdeeCalculation @relation(fields: [tdeeId], references: [tdeeId], onDelete: Cascade)
   user            User            @relation(fields: [userId], references: [userId])
 
   @@index([adminId], map: "meal_plans_admin_id_fkey")
@@ -144,7 +144,7 @@ model UserMealSelection {
   remainingCalories Float
   selected_date     DateTime        @default(now())
   meal_type         String          @default("regular") @db.VarChar(50)
-  tdeeCalculation   TdeeCalculation @relation(fields: [tdeeId], references: [tdeeId])
+  tdeeCalculation   TdeeCalculation @relation(fields: [tdeeId], references: [tdeeId], onDelete: Cascade)
   user              User            @relation(fields: [userId], references: [userId])
 
   @@index([tdeeId], map: "user_meal_selections_tdee_id_fkey")
@@ -185,7 +185,7 @@ model savedprofile {
   age               Int
   activity_level    savedprofile_activity_level
   profiles          Profile                     @relation(fields: [profile_id], references: [profileId], map: "SavedProfile_profile_id_fkey")
-  tdee_calculations TdeeCalculation             @relation(fields: [tdee_id], references: [tdeeId], map: "SavedProfile_tdee_id_fkey")
+  tdee_calculations TdeeCalculation             @relation(fields: [tdee_id], references: [tdeeId], onDelete: Cascade, map: "SavedProfile_tdee_id_fkey")
 
   @@index([profile_id], map: "SavedProfile_profile_id_fkey")
   @@index([tdee_id], map: "SavedProfile_tdee_id_fkey")
@@ -244,7 +244,7 @@ model DailyMealHistory {
   userId           Int
   user             User                 @relation(fields: [userId], references: [userId])
   tdeeId           Int
-  tdee             TdeeCalculation      @relation(fields: [tdeeId], references: [tdeeId])
+  tdee             TdeeCalculation      @relation(fields: [tdeeId], references: [tdeeId], onDelete: Cascade)
   date             DateTime             @default(now())
   totalCalories    Float
   calorieRemaining Float
@@ -259,7 +259,7 @@ model DailyMealHistory {
 model DailyMealFoodEntry {
   id             Int              @id @default(autoincrement())
   mealHistoryId  Int
-  mealHistory    DailyMealHistory @relation(fields: [mealHistoryId], references: [id])
+  mealHistory    DailyMealHistory @relation(fields: [mealHistoryId], references: [id], onDelete: Cascade)
   foodId         Int? // Make foodId optional
   food           food?            @relation("DailyMealFoodEntryToFood", fields: [foodId], references: [id]) // Added explicit relation name
   quantity       Float
