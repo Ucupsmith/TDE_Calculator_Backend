@@ -26,7 +26,7 @@ model User {
 
 model TdeeCalculation {
   tdeeId         Int           @id @default(autoincrement()) @map("tdee_id")
-  userId         Int            @map("user_id")
+  userId         Int           @map("user_id")
   goal           Goal          @map("goal")
   tdee_result    Decimal       @map("tdee_result")
   activity_level ActivityLevel
@@ -35,7 +35,7 @@ model TdeeCalculation {
   height         Decimal       @db.Decimal(8, 2)
   saved_id       Int           @map("saved_id")
   weight         Decimal       @db.Decimal(8, 2)
-  createdAt      DateTime  @default(now()) @map("created_at")
+  createdAt      DateTime      @default(now()) @map("created_at")
 
   user               User                @relation(fields: [userId], references: [userId])
   mealPlan           MealPlan[]
@@ -47,20 +47,20 @@ model TdeeCalculation {
 }
 
 model Profile {
-  profileId         Int               @id @default(autoincrement()) @map("profile_id")
-  userId            Int               @unique @map("user_id")
-  full_name         String?           @db.VarChar(255)
-  birth_date        DateTime?         @db.DateTime(0)
-  birth_place       String?           @db.VarChar(255)
-  address           String?           @db.VarChar(255)
-  phone_number      String            @db.VarChar(12)
-  email             String            @db.VarChar(255)
-  avatar            String?
-  gender            Gender?
-  mealPlan          MealPlan[]
-  notification      notification[]
-  user              User              @relation(fields: [userId], references: [userId])
-  savedprofile      savedprofile[]
+  profileId    Int            @id @default(autoincrement()) @map("profile_id")
+  userId       Int            @unique @map("user_id")
+  full_name    String?        @db.VarChar(255)
+  birth_date   DateTime?      @db.DateTime(0)
+  birth_place  String?        @db.VarChar(255)
+  address      String?        @db.VarChar(255)
+  phone_number String         @db.VarChar(12)
+  email        String         @db.VarChar(255)
+  avatar       String?
+  gender       Gender?
+  mealPlan     MealPlan[]
+  notification notification[]
+  user         User           @relation(fields: [userId], references: [userId])
+  savedprofile savedprofile[]
 
   @@map("profiles")
 }
@@ -122,32 +122,31 @@ model Article {
 }
 
 model Menu {
-  menuId             Int                 @id @default(autoincrement()) @map("menu_id")
-  name               String              @db.VarChar(255)
-  calories           Int
-  price              Decimal             @db.Decimal(10, 2)
-  description        String              @db.Text
-  category           String              @db.VarChar(50)
-  image_path         String?             @db.VarChar(255)
-  created_at         DateTime            @default(now())
-  updated_at         DateTime            @updatedAt @map("updated_at")
-  userMealSelections UserMealSelection[]
+  menuId      Int      @id @default(autoincrement()) @map("menu_id")
+  name        String   @db.VarChar(255)
+  calories    Int
+  price       Decimal  @db.Decimal(10, 2)
+  description String   @db.Text
+  category    String   @db.VarChar(50)
+  image_path  String?  @db.VarChar(255)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt @map("updated_at")
 
   @@map("menus")
 }
 
 model UserMealSelection {
-  selectionId     Int             @id @default(autoincrement()) @map("selection_id")
-  userId          Int             @map("user_id")
-  menuId          Int             @map("menu_id")
-  tdeeId          Int             @map("tdee_id")
-  selected_date   DateTime        @default(now())
-  meal_type       String          @db.VarChar(50)
-  menu            Menu            @relation(fields: [menuId], references: [menuId])
-  tdeeCalculation TdeeCalculation @relation(fields: [tdeeId], references: [tdeeId])
-  user            User            @relation(fields: [userId], references: [userId])
+  selectionId       Int             @id @default(autoincrement()) @map("selection_id")
+  userId            Int             @map("user_id")
+  tdeeId            Int             @map("tdee_id")
+  selectedFoods     String          @db.Text // Store JSON string of selected foods
+  totalCalories     Float
+  remainingCalories Float
+  selected_date     DateTime        @default(now())
+  meal_type         String          @default("regular") @db.VarChar(50)
+  tdeeCalculation   TdeeCalculation @relation(fields: [tdeeId], references: [tdeeId])
+  user              User            @relation(fields: [userId], references: [userId])
 
-  @@index([menuId], map: "user_meal_selections_menu_id_fkey")
   @@index([tdeeId], map: "user_meal_selections_tdee_id_fkey")
   @@index([userId], map: "user_meal_selections_user_id_fkey")
   @@map("user_meal_selections")
@@ -241,35 +240,35 @@ enum Status {
 }
 
 model DailyMealHistory {
-  id             Int       @id @default(autoincrement())
-  userId         Int
-  user           User      @relation(fields: [userId], references: [userId])
-  tdeeId         Int
-  tdee           TdeeCalculation @relation(fields: [tdeeId], references: [tdeeId])
-  date           DateTime  @default(now())
-  totalCalories  Float
+  id               Int                  @id @default(autoincrement())
+  userId           Int
+  user             User                 @relation(fields: [userId], references: [userId])
+  tdeeId           Int
+  tdee             TdeeCalculation      @relation(fields: [tdeeId], references: [tdeeId])
+  date             DateTime             @default(now())
+  totalCalories    Float
   calorieRemaining Float
-  foods          DailyMealFoodEntry[]
+  foods            DailyMealFoodEntry[]
 
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([userId, date])
 }
 
 model DailyMealFoodEntry {
-  id             Int       @id @default(autoincrement())
+  id             Int              @id @default(autoincrement())
   mealHistoryId  Int
   mealHistory    DailyMealHistory @relation(fields: [mealHistoryId], references: [id])
-  foodId         Int?      // Make foodId optional
-  food           food?     @relation("DailyMealFoodEntryToFood", fields: [foodId], references: [id]) // Added explicit relation name
+  foodId         Int? // Make foodId optional
+  food           food?            @relation("DailyMealFoodEntryToFood", fields: [foodId], references: [id]) // Added explicit relation name
   quantity       Float
-  isCustom       Boolean   @default(false) // Add flag for custom food
-  customName     String?   // Add field for custom food name
-  customCalories Float?    // Add field for custom food calories (per unit/quantity)
+  isCustom       Boolean          @default(false) // Add flag for custom food
+  customName     String? // Add field for custom food name
+  customCalories Float? // Add field for custom food calories (per unit/quantity)
 
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([mealHistoryId])
   @@index([foodId])

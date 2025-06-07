@@ -96,11 +96,9 @@ export const saveTdeeToHomeController = async (req, res) => {
   const userId = req.user.id;
 
   if (!userId || !tdee_result || !goal) {
-    return res
-      .status(400)
-      .json({
-        message: 'Missing required fields: userId, tdee_result, or goal'
-      });
+    return res.status(400).json({
+      message: 'Missing required fields: userId, tdee_result, or goal'
+    });
   }
 
   try {
@@ -205,12 +203,10 @@ export const getLatestTdeeResultByProfile = async (req, res) => {
       goal: latest.goal
     });
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        message: 'Error fetching latest TDEE result',
-        error: error.message
-      });
+    res.status(500).json({
+      message: 'Error fetching latest TDEE result',
+      error: error.message
+    });
   }
 };
 

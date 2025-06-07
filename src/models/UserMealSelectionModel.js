@@ -27,7 +27,7 @@ export const createUserMealSelection = async (data) => {
     where: {
       userId,
       tdeeId,
-      date: {
+      selected_date: {
         gte: startOfDay,
         lte: endOfDay
       }
@@ -55,7 +55,8 @@ export const createUserMealSelection = async (data) => {
       selectedFoods: JSON.stringify(selectedFoods),
       totalCalories,
       remainingCalories,
-      date: currentDate
+      selected_date: currentDate,
+      meal_type: 'regular'
     }
   });
 
@@ -66,6 +67,10 @@ export const createUserMealSelection = async (data) => {
 };
 
 export const getCurrentDayCalories = async (userId, tdeeId) => {
+  if (!userId || !tdeeId) {
+    throw new Error('User ID and TDEE ID are required');
+  }
+
   const today = new Date();
   const startOfDay = new Date(today);
   startOfDay.setHours(0, 0, 0, 0);
@@ -74,26 +79,29 @@ export const getCurrentDayCalories = async (userId, tdeeId) => {
   endOfDay.setHours(23, 59, 59, 999);
 
   // Get TDEE calculation
-  const tdeeCalculation = await prisma.tdeeCalculation.findUnique({
-    where: { tdeeId: tdeeId }
+  const tdee = await prisma.tdeeCalculation.findUnique({
+    where: {
+      tdeeId: Number(tdeeId),
+      userId: userId // Add userId check to ensure the TDEE belongs to the user
+    }
   });
 
-  if (!tdeeCalculation) {
-    throw new Error('TDEE calculation not found');
+  if (!tdee) {
+    throw new Error('TDEE calculation not found for this user');
   }
 
   // Get today's selections
   const todaySelections = await prisma.userMealSelection.findMany({
     where: {
       userId,
-      tdeeId,
-      date: {
+      tdeeId: Number(tdeeId),
+      selected_date: {
         gte: startOfDay,
         lte: endOfDay
       }
     },
     orderBy: {
-      date: 'desc'
+      selected_date: 'desc'
     }
   });
 
@@ -101,7 +109,7 @@ export const getCurrentDayCalories = async (userId, tdeeId) => {
   if (todaySelections.length === 0) {
     return {
       totalCalories: 0,
-      remainingCalories: tdeeCalculation.tdee_result,
+      remainingCalories: tdee.tdee_result,
       isNewDay: true
     };
   }
