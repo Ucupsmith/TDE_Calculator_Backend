@@ -37,7 +37,7 @@ router.get('/summary', getMealPlanSummary);
 router.get('/summary/', getMealPlanByTdeeId);
 
 // Add food to today's meal plan
-router.post('/add', createMealSelection);
+// router.post('/add-meal', createMealSelection);
 
 // Get available foods for meal plan
 router.get('/foods', getMealPlanFoods);
