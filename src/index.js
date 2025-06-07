@@ -9,10 +9,12 @@ import { articleRoutes } from './routes/articleRoutes.js';
 import foodRoutes from './routes/foodRoutes.js';
 import mealPlanRoutes from './routes/mealPlanRoutes.js';
 import { authRoutes } from './routes/authRoutes.js';
+import path from 'path';
 
 dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 8000;
+const publicPath = path.resolve('src/public');
 
 //  Middleware for parsing JSON request body
 app.use(express.json());
@@ -46,7 +48,7 @@ app.use('/user/v1/meal-plans', mealPlanRoutes);
 app.use('/user/v1/auth', authRoutes);
 
 // Serve static files from the "public" directory
-app.use(express.static('src/public'));
+app.use(express.static(publicPath));
 
 app.listen(PORT, () => {
   console.log(`server is running on port: ${PORT}`);

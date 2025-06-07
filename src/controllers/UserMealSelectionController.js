@@ -3,11 +3,11 @@ import {
   getUserMealSelections,
   getLatestMealSelection,
   getMealSelectionsByDate,
-  getCurrentDayCalories,
-} from "../models/UserMealSelectionModel.js";
+  getCurrentDayCalories
+} from '../models/UserMealSelectionModel.js';
 // Removed import for FoodModel as we will save food details directly
 // import { getFoodDetails } from '../models/FoodModel.js';
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -21,33 +21,33 @@ export const getCurrentDayCaloriesController = async (req, res) => {
 
     // Validasi userId
     if (isNaN(userIdInt)) {
-      return res.status(400).json({ message: "User ID must be a number" });
+      return res.status(400).json({ message: 'User ID must be a number' });
     }
     // Validasi tdeeId jika ada
     if (tdeeId && isNaN(tdeeIdInt)) {
-      return res.status(400).json({ message: "TDEE ID must be a number" });
+      return res.status(400).json({ message: 'TDEE ID must be a number' });
     }
 
     // Ambil TDEE terakhir user
     const userTdee = await prisma.tdeeCalculation.findFirst({
       where: { userId: userIdInt },
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: 'desc' }
     });
 
     if (!userTdee) {
-      return res.status(404).json({ message: "No active TDEE found for user" });
+      return res.status(404).json({ message: 'No active TDEE found for user' });
     }
 
     // Jika tdeeId diberikan, cek validitasnya di database (opsional, bisa dihapus jika tidak perlu)
     let tdee = null;
     if (tdeeIdInt) {
       tdee = await prisma.tdeeCalculation.findUnique({
-        where: { tdeeId: tdeeIdInt },
+        where: { tdeeId: tdeeIdInt }
       });
       if (!tdee) {
         return res
           .status(404)
-          .json({ message: "TDEE not found for given tdeeId" });
+          .json({ message: 'TDEE not found for given tdeeId' });
       }
     }
 
@@ -59,13 +59,13 @@ export const getCurrentDayCaloriesController = async (req, res) => {
       remainingCalories: result.remainingCalories,
       tdeeGoal: userTdee.tdee_result,
       goal: userTdee.goal,
-      isNewDay: result.isNewDay,
+      isNewDay: result.isNewDay
     });
   } catch (error) {
-    console.error("Error getting current day calories:", error);
+    console.error('Error getting current day calories:', error);
     res.status(500).json({
-      message: "Error getting current day calories",
-      error: error.message,
+      message: 'Error getting current day calories',
+      error: error.message
     });
   }
 };
@@ -77,7 +77,7 @@ export const createMealSelection = async (req, res) => {
 
     if (!userId || !foods || !Array.isArray(foods) || foods.length === 0) {
       return res.status(400).json({
-        message: "Missing required fields: userId and foods array",
+        message: 'Missing required fields: userId and foods array'
       });
     }
 
@@ -88,15 +88,15 @@ export const createMealSelection = async (req, res) => {
     // Get user's TDEE goal
     const userTdee = await prisma.tdeeCalculation.findFirst({
       where: {
-        userId: Number(userId),
+        userId: Number(userId)
       },
       orderBy: {
-        createdAt: "desc",
-      },
+        createdAt: 'desc'
+      }
     });
 
     if (!userTdee) {
-      return res.status(404).json({ message: "No active TDEE found for user" });
+      return res.status(404).json({ message: 'No active TDEE found for user' });
     }
 
     // Get or create today's meal history
@@ -105,9 +105,9 @@ export const createMealSelection = async (req, res) => {
         userId: Number(userId),
         date: {
           gte: today,
-          lt: new Date(today.getTime() + 24 * 60 * 60 * 1000),
-        },
-      },
+          lt: new Date(today.getTime() + 24 * 60 * 60 * 1000)
+        }
+      }
     });
 
     if (!todayMealHistory) {
@@ -117,8 +117,8 @@ export const createMealSelection = async (req, res) => {
           tdeeId: userTdee.tdeeId,
           date: today,
           totalCalories: 0,
-          calorieRemaining: Number(userTdee.tdee_result),
-        },
+          calorieRemaining: Number(userTdee.tdee_result)
+        }
       });
     }
 
@@ -131,7 +131,7 @@ export const createMealSelection = async (req, res) => {
       // Skip if no calories or invalid calories
       if (
         !foodItem.calories ||
-        typeof foodItem.calories !== "number" ||
+        typeof foodItem.calories !== 'number' ||
         foodItem.calories < 0
       ) {
         console.warn(`Invalid calories for food: ${JSON.stringify(foodItem)}`);
@@ -146,16 +146,16 @@ export const createMealSelection = async (req, res) => {
           isCustom: true,
           customName: foodItem.name,
           customCalories: foodItem.calories,
-          quantity: foodItem.unit || 1,
+          quantity: foodItem.unit || 1
         };
         foodEntriesToCreate.push(foodEntry);
         processedFoods.push({
           id: foodEntriesToCreate.length, // Temporary ID
           name: foodItem.name,
           calories: foodItem.calories,
-          unit: foodItem.unit || "1 porsi",
+          unit: foodItem.unit || '1 porsi',
           imageUrl: null,
-          isCustom: true,
+          isCustom: true
         });
         totalCaloriesAdded += foodItem.calories * (foodItem.unit || 1);
       } else {
@@ -163,15 +163,15 @@ export const createMealSelection = async (req, res) => {
         const existingFood = await prisma.food.findFirst({
           where: {
             name: foodItem.name,
-            calories: foodItem.calories,
+            calories: foodItem.calories
           },
           select: {
             id: true,
             name: true,
             calories: true,
             unit: true,
-            imageUrl: true, // Make sure to select imageUrl
-          },
+            imageUrl: true // Make sure to select imageUrl
+          }
         });
 
         if (existingFood) {
@@ -180,7 +180,7 @@ export const createMealSelection = async (req, res) => {
             mealHistoryId: todayMealHistory.id,
             foodId: existingFood.id,
             quantity: 1,
-            isCustom: false,
+            isCustom: false
           };
           foodEntriesToCreate.push(foodEntry);
           processedFoods.push({
@@ -189,7 +189,7 @@ export const createMealSelection = async (req, res) => {
             calories: existingFood.calories,
             unit: existingFood.unit,
             imageUrl: existingFood.imageUrl, // Include the image from database
-            isCustom: false,
+            isCustom: false
           });
         } else {
           // If food doesn't exist, treat it as custom
@@ -198,16 +198,16 @@ export const createMealSelection = async (req, res) => {
             isCustom: true,
             customName: foodItem.name,
             customCalories: foodItem.calories,
-            quantity: 1,
+            quantity: 1
           };
           foodEntriesToCreate.push(foodEntry);
           processedFoods.push({
             id: foodEntriesToCreate.length, // Temporary ID
             name: foodItem.name,
             calories: foodItem.calories,
-            unit: "1 porsi",
+            unit: '1 porsi',
             imageUrl: null,
-            isCustom: true,
+            isCustom: true
           });
         }
         totalCaloriesAdded += foodItem.calories;
@@ -217,7 +217,7 @@ export const createMealSelection = async (req, res) => {
     // Create all food entries
     if (foodEntriesToCreate.length > 0) {
       await prisma.dailyMealFoodEntry.createMany({
-        data: foodEntriesToCreate,
+        data: foodEntriesToCreate
       });
     }
 
@@ -226,12 +226,12 @@ export const createMealSelection = async (req, res) => {
       where: { id: todayMealHistory.id },
       data: {
         totalCalories: {
-          increment: totalCaloriesAdded,
+          increment: totalCaloriesAdded
         },
         calorieRemaining: {
-          decrement: totalCaloriesAdded,
-        },
-      },
+          decrement: totalCaloriesAdded
+        }
+      }
     });
 
     // Create user meal selection record
@@ -239,22 +239,22 @@ export const createMealSelection = async (req, res) => {
       userId: Number(userId),
       tdeeId: userTdee.tdeeId,
       selectedFoods: processedFoods,
-      date: today,
+      date: today
     });
 
     res.status(201).json({
-      message: "Meal selection created successfully",
+      message: 'Meal selection created successfully',
       data: {
         totalCalories: updatedHistory.totalCalories,
         calorieRemaining: updatedHistory.calorieRemaining,
-        foods: processedFoods,
-      },
+        foods: processedFoods
+      }
     });
   } catch (error) {
-    console.error("Error adding food to meal plan:", error);
+    console.error('Error adding food to meal plan:', error);
     res.status(500).json({
-      message: "Error adding food to meal plan",
-      error: error.message,
+      message: 'Error adding food to meal plan',
+      error: error.message
     });
   }
 };
@@ -264,16 +264,16 @@ export const getMealPlanFoods = async (req, res) => {
   try {
     const foods = await prisma.food.findMany({
       orderBy: {
-        name: "asc",
-      },
+        name: 'asc'
+      }
     });
 
     res.json(foods);
   } catch (error) {
-    console.error("Error getting meal plan foods:", error);
+    console.error('Error getting meal plan foods:', error);
     res.status(500).json({
-      message: "Error getting meal plan foods",
-      error: error.message,
+      message: 'Error getting meal plan foods',
+      error: error.message
     });
   }
 };
@@ -283,14 +283,14 @@ export const getMealSelections = async (req, res) => {
   // This handler needs to be updated to query DailyMealHistory
   res
     .status(501)
-    .json({ message: "Not Implemented - getMealSelections needs update" });
+    .json({ message: 'Not Implemented - getMealSelections needs update' });
 };
 
 export const getLatestSelection = async (req, res) => {
   // This handler needs to be updated to query DailyMealHistory
   res
     .status(501)
-    .json({ message: "Not Implemented - getLatestSelection needs update" });
+    .json({ message: 'Not Implemented - getLatestSelection needs update' });
 };
 
 // This handler needs to be updated to query DailyMealHistory
@@ -299,31 +299,31 @@ export const getMealPlanHistory = async (req, res) => {
     const { userId } = req.query; // Assuming userId is passed as a query parameter
 
     if (!userId) {
-      return res.status(400).json({ message: "User ID is required" });
+      return res.status(400).json({ message: 'User ID is required' });
     }
 
     // Fetch daily meal history for the user, ordered by date descending
     const history = await prisma.dailyMealHistory.findMany({
       where: {
-        userId: Number(userId),
+        userId: Number(userId)
       },
       orderBy: {
-        date: "desc", // Show most recent history first
+        date: 'desc' // Show most recent history first
       },
       include: {
         // Include the food entries for each day
         foods: {
           orderBy: {
-            createdAt: "asc", // Order food entries within a day
+            createdAt: 'asc' // Order food entries within a day
           },
           include: {
             // For standard foods, include the food details
-            food: true,
-          },
+            food: true
+          }
         },
         // Include the related TDEE calculation for goal and TDEE result
-        tdee: true, // Include the related TdeeCalculation
-      },
+        tdee: true // Include the related TdeeCalculation
+      }
     });
 
     // Format the response data
@@ -336,7 +336,7 @@ export const getMealPlanHistory = async (req, res) => {
       calorieRemaining: day.calorieRemaining ?? 0, // Provide default 0 if null
       // Safely access tdeeResult and goal, provide default if tdee relation is null
       tdeeResult: day.tdee ? day.tdee.tdee : 0, // Use 0 or a suitable default if tdee is null
-      goal: day.tdee ? day.tdee.goal : "N/A", // Use 'N/A' or a suitable default if tdee is null
+      goal: day.tdee ? day.tdee.goal : 'N/A', // Use 'N/A' or a suitable default if tdee is null
       foods: day.foods.map((foodEntry) => ({
         // Use standard food details if available, otherwise use custom food details
         id: foodEntry.id, // DailyMealFoodEntry ID
@@ -354,18 +354,18 @@ export const getMealPlanHistory = async (req, res) => {
         customName: foodEntry.isCustom ? foodEntry.customName : undefined,
         customCalories: foodEntry.isCustom
           ? foodEntry.customCalories
-          : undefined,
+          : undefined
       })),
       createdAt: day.createdAt,
-      updatedAt: day.updatedAt,
+      updatedAt: day.updatedAt
     }));
 
     res.json(formattedHistory);
   } catch (error) {
-    console.error("Error getting meal plan history:", error);
+    console.error('Error getting meal plan history:', error);
     res.status(500).json({
-      message: "Error getting meal plan history",
-      error: error.message,
+      message: 'Error getting meal plan history',
+      error: error.message
     });
   }
 };
@@ -374,18 +374,18 @@ export const getMealPlanHistory = async (req, res) => {
 export const updateMealSelection = async (req, res) => {
   res
     .status(501)
-    .json({ message: "Not Implemented - updateMealSelection needs update" });
+    .json({ message: 'Not Implemented - updateMealSelection needs update' });
 };
 
 // These handlers might need adjustment or be removed/replaced
 export const getMealPlanSummary = async (req, res) => {
   res
     .status(501)
-    .json({ message: "Not Implemented - getMealPlanSummary needs update" });
+    .json({ message: 'Not Implemented - getMealPlanSummary needs update' });
 };
 
 export const getMealPlanByTdeeId = async (req, res) => {
   res
     .status(501)
-    .json({ message: "Not Implemented - getMealPlanByTdeeId needs update" });
+    .json({ message: 'Not Implemented - getMealPlanByTdeeId needs update' });
 };
