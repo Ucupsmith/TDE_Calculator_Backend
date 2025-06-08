@@ -1,10 +1,25 @@
-import express from "express";
-import { calculateTdeeOnly, saveTdeeCalculationController, getTdeeHistory } from "../controllers/TdeeController.js";
+import express from 'express';
+import {
+  calculateTdeeOnly,
+  saveTdeeCalculationController,
+  getTdeeHistory,
+  getLatestTdeeResultByProfile,
+  saveTdeeToHomeController,
+  getLastTdeeController,
+  getTdeeHistoryForHome,
+  deleteTdeeCalculationController
+} from '../controllers/TdeeController.js';
+import { authenticateToken } from '../middleware/auth.js';
 
 const tdeeRoutes = express.Router();
 
-tdeeRoutes.post("/calculate", calculateTdeeOnly);
-tdeeRoutes.post("/", saveTdeeCalculationController);
-tdeeRoutes.get("/history/:profileId", getTdeeHistory);
+tdeeRoutes.post('/calculate', calculateTdeeOnly);
+tdeeRoutes.post('/save', authenticateToken, saveTdeeCalculationController);
+tdeeRoutes.get('/history/:profileId', authenticateToken, getTdeeHistory);
+tdeeRoutes.get('/result', authenticateToken, getLatestTdeeResultByProfile);
+tdeeRoutes.post('/home/save', authenticateToken, saveTdeeToHomeController);
+tdeeRoutes.get('/home/last', authenticateToken, getLastTdeeController);
+tdeeRoutes.get('/home/history', authenticateToken, getTdeeHistoryForHome);
+tdeeRoutes.delete('/history/:tdeeId', authenticateToken, deleteTdeeCalculationController);
 
-export { tdeeRoutes }; 
+export { tdeeRoutes };

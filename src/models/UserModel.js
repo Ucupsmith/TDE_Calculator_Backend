@@ -1,13 +1,13 @@
-import db from "../config/db.js";
-import prisma from "../../prisma/prismaClient.js";
+import db from '../config/db.js';
+import prisma from '../../prisma/prismaClient.js';
 
 export const getUser = async () => {
   return await prisma.user.findMany({
     select: {
       userId: true,
       username: true,
-      email: true,
-    },
+      email: true
+    }
   });
 };
 
@@ -15,25 +15,39 @@ export const getUserById = async (id) => {
   return await prisma.user.findUnique({
     where: { userId: id },
     select: {
-      userId: true,
-    },
+      userId: true
+    }
   });
 };
 
-export const createUser = async (username, hashedPassword, email) => {
+export const createUser = async (
+  username,
+  email,
+  number_phone,
+  hashedPassword
+) => {
   return await prisma.user.create({
     data: {
       username,
       email,
-      password: hashedPassword,
-    },
+      number_phone,
+      password: hashedPassword
+    }
   });
 };
 
 export const getUserByEmail = async (email) => {
-  return await prisma.user.findUnique({
-    where: email,
-  });
+  try {
+    // log email yang dicari
+    console.log('Mencari user dengan email:', email);
+    return await prisma.user.findFirst({
+      where: { email }
+    });
+    // ...query ke database
+  } catch (err) {
+    console.error('Error in getUserByEmail:', err);
+    throw err; // biar error-nya naik ke controller
+  }
 };
 
 export const updateUser = async (newUsername, newEmail, newPassword) => {
@@ -41,13 +55,13 @@ export const updateUser = async (newUsername, newEmail, newPassword) => {
     data: {
       username: newUsername,
       email: newEmail,
-      password: newPassword,
-    },
+      password: newPassword
+    }
   });
 };
 
 export const deleteUser = async (id) => {
   return await prisma.user.delete({
-    where: { userId: id },
+    where: { userId: id }
   });
 };

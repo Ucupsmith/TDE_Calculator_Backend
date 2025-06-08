@@ -6,7 +6,7 @@ import {
   updateArticleHandler,
   deleteArticleHandler,
   upload
-} from "../controllers/ArticleController.mjs";
+} from "../controllers/ArticleController.js";
 
 const articleRoutes = express.Router();
 

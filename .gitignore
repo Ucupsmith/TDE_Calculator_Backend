@@ -2,3 +2,6 @@
 /node_modules
 #Entry Point Database
 .env
+#dbconfig
+/dbconfig.json
+#build

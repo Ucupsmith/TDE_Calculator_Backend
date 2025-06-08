@@ -1,4 +1,4 @@
-import prisma from "../../prisma/prismaClient.js";
+import prisma from '../../prisma/prismaClient.js';
 
 // BMI calculation
 export function calculateBMI(weight, height) {
@@ -27,28 +27,40 @@ export function getBMICategory(bmi, region = 'asia') {
 // BMR calculation (Harris-Benedict)
 export function calculateBMR(gender, weight, height, age) {
   if (gender === 'male') {
-    return 88.362 + (13.397 * weight) + (4.799 * height) - (5.677 * age);
+    return 88.362 + 13.397 * weight + 4.799 * height - 5.677 * age;
   } else {
-    return 447.593 + (9.247 * weight) + (3.098 * height) - (4.330 * age);
+    return 447.593 + 9.247 * weight + 3.098 * height - 4.33 * age;
   }
 }
 
 // TDEE calculation (Katch-McArdle)
-export function calculateTDEE(bmr, activityLevel) {
+export function calculateTDEE(bmr, activityLevel, goal) {
   const factors = {
     sedentary: 1.2,
     slightly_active: 1.375,
     moderately_active: 1.55,
     very_active: 1.725,
-    extra_active: 1.9,
+    extra_active: 1.9
   };
-  return bmr * (factors[activityLevel] || 1.2);
+
+  let baseTDEE = bmr * (factors[activityLevel] || 1.2);
+
+  // Adjust TDEE based on goal
+  switch (goal) {
+    case 'LoseWeight':
+      return baseTDEE - 500; // Deficit of 500 calories for weight loss
+    case 'GainWeight':
+      return baseTDEE + 500; // Surplus of 500 calories for weight gain
+    case 'MaintainWeight':
+    default:
+      return baseTDEE; // No adjustment for maintenance
+  }
 }
 
 export const saveTdeeCalculation = async (data) => {
   return await prisma.tdeeCalculation.create({
     data: {
-      profileId: data.profileId,
+      userId: data.userId,
       gender: data.gender,
       weight: data.weight,
       height: data.height,
@@ -56,13 +68,42 @@ export const saveTdeeCalculation = async (data) => {
       activity_level: data.activity_level,
       goal: data.goal,
       tdee_result: data.tdee_result,
-      saved_id: data.saved_id !== undefined ? data.saved_id : 0
-    },
+      saved_id: data.saved_id ?? 0
+    }
+  });
+};
+
+export const getLastTdeeCalculation = async (userId) => {
+  return await prisma.tdeeCalculation.findFirst({
+    where: { userId: Number(userId) },
+    orderBy: { tdeeId: 'desc' } // paling terbaru
   });
 };
 
 export const getTdeeByProfileId = async (profileId) => {
   return await prisma.tdeeCalculation.findMany({
-    where: { profileId: profileId },
+    where: { profileId: profileId }
   });
-}; 
+};
+
+export const getTdeeHistoryForHome = async (userId) => {
+  // ... existing code ...
+};
+
+export const deleteTdeeCalculation = async (tdeeId, userId) => {
+  try {
+    const deletedTdee = await prisma.tdeeCalculation.delete({
+      where: {
+        tdeeId: tdeeId, // Delete by TDEE ID
+        userId: userId, // Ensure the user owns this TDEE calculation
+      },
+    });
+    return deletedTdee;
+  } catch (error) {
+    // Handle case where TDEE calculation is not found or doesn't belong to the user
+    if (error.code === 'P2025') { // P2025: An operation failed because it depends on one or more records that were required but not found.
+      throw new Error('TDEE calculation not found or does not belong to the user.');
+    }
+    throw new Error(`Error deleting TDEE calculation: ${error.message}`);
+  }
+};

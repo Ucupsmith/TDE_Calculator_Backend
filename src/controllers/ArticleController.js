@@ -8,7 +8,7 @@ import {
   updateArticle, 
   deleteArticle,
   getUserById
-} from "../models/ArticleModel.mjs";
+} from "../models/ArticleModel.js";
 
 // Configure multer for image uploads
 const storage = multer.diskStorage({
