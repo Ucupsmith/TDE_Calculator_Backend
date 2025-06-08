@@ -389,3 +389,206 @@ export const getMealPlanByTdeeId = async (req, res) => {
     .status(501)
     .json({ message: 'Not Implemented - getMealPlanByTdeeId needs update' });
 };
+
+export const deleteMealFoodEntry = async (req, res) => {
+  try {
+    const { foodEntryId } = req.params;
+    const foodEntryIdInt = Number(foodEntryId);
+
+    if (isNaN(foodEntryIdInt)) {
+      return res.status(400).json({ message: 'Food Entry ID must be a number' });
+    }
+
+    // Find the food entry to be deleted
+    const foodEntryToDelete = await prisma.dailyMealFoodEntry.findUnique({
+      where: { id: foodEntryIdInt },
+      include: { dailyMealHistory: true } // Include dailyMealHistory to update its calories
+    });
+
+    if (!foodEntryToDelete) {
+      return res.status(404).json({ message: 'Food entry not found' });
+    }
+
+    const mealHistory = foodEntryToDelete.dailyMealHistory;
+    if (!mealHistory) {
+      return res.status(500).json({ message: 'Associated meal history not found' });
+    }
+
+    // Calculate calories to subtract based on whether it's a custom food or standard food
+    let caloriesToSubtract = 0;
+    if (foodEntryToDelete.isCustom) {
+      caloriesToSubtract = foodEntryToDelete.customCalories * foodEntryToDelete.quantity;
+    } else if (foodEntryToDelete.foodId) {
+      // For standard food, fetch calories from the Food model if available
+      const foodDetails = await prisma.food.findUnique({
+        where: { id: foodEntryToDelete.foodId },
+        select: { calories: true }
+      });
+      if (foodDetails) {
+        caloriesToSubtract = foodDetails.calories * foodEntryToDelete.quantity;
+      }
+    }
+
+    // Delete the food entry
+    await prisma.dailyMealFoodEntry.delete({
+      where: { id: foodEntryIdInt }
+    });
+
+    // Update total calories and remaining calories in DailyMealHistory
+    const updatedHistory = await prisma.dailyMealHistory.update({
+      where: { id: mealHistory.id },
+      data: {
+        totalCalories: { decrement: caloriesToSubtract },
+        calorieRemaining: { increment: caloriesToSubtract } // Add back to remaining
+      }
+    });
+
+    res.status(200).json({
+      message: 'Food entry deleted successfully',
+      totalCalories: updatedHistory.totalCalories,
+      calorieRemaining: updatedHistory.calorieRemaining
+    });
+  } catch (error) {
+    console.error('Error deleting meal food entry:', error);
+    res.status(500).json({
+      message: 'Error deleting meal food entry',
+      error: error.message
+    });
+  }
+};
+
+export const updateMealFoodEntry = async (req, res) => {
+  try {
+    const { foodEntryId } = req.params;
+    const { quantity } = req.body;
+
+    const foodEntryIdInt = Number(foodEntryId);
+    const quantityInt = Number(quantity);
+
+    if (isNaN(foodEntryIdInt) || isNaN(quantityInt) || quantityInt <= 0) {
+      return res.status(400).json({ message: 'Invalid food entry ID or quantity' });
+    }
+
+    // Find the food entry to be updated
+    const foodEntryToUpdate = await prisma.dailyMealFoodEntry.findUnique({
+      where: { id: foodEntryIdInt },
+      include: { dailyMealHistory: true, food: true } // Include dailyMealHistory and food to update calories
+    });
+
+    if (!foodEntryToUpdate) {
+      return res.status(404).json({ message: 'Food entry not found' });
+    }
+
+    const mealHistory = foodEntryToUpdate.dailyMealHistory;
+    if (!mealHistory) {
+      return res.status(500).json({ message: 'Associated meal history not found' });
+    }
+
+    // Calculate old calories for the food entry
+    let oldCalories = 0;
+    if (foodEntryToUpdate.isCustom) {
+      oldCalories = foodEntryToUpdate.customCalories * foodEntryToUpdate.quantity;
+    } else if (foodEntryToUpdate.food) {
+      oldCalories = foodEntryToUpdate.food.calories * foodEntryToUpdate.quantity;
+    }
+
+    // Calculate new calories for the food entry based on the new quantity
+    let newCalories = 0;
+    if (foodEntryToUpdate.isCustom) {
+      newCalories = foodEntryToUpdate.customCalories * quantityInt;
+    } else if (foodEntryToUpdate.food) {
+      newCalories = foodEntryToUpdate.food.calories * quantityInt;
+    }
+
+    // Update the food entry quantity
+    const updatedFoodEntry = await prisma.dailyMealFoodEntry.update({
+      where: { id: foodEntryIdInt },
+      data: { quantity: quantityInt }
+    });
+
+    // Calculate the difference in calories
+    const calorieDifference = newCalories - oldCalories;
+
+    // Update total calories and remaining calories in DailyMealHistory
+    const updatedHistory = await prisma.dailyMealHistory.update({
+      where: { id: mealHistory.id },
+      data: {
+        totalCalories: { increment: calorieDifference },
+        calorieRemaining: { decrement: calorieDifference } // Subtract from remaining
+      }
+    });
+
+    res.status(200).json({
+      message: 'Food entry updated successfully',
+      data: updatedFoodEntry,
+      totalCalories: updatedHistory.totalCalories,
+      calorieRemaining: updatedHistory.calorieRemaining
+    });
+  } catch (error) {
+    console.error('Error updating meal food entry:', error);
+    res.status(500).json({
+      message: 'Error updating meal food entry',
+      error: error.message
+    });
+  }
+};
+
+export const deleteMealPlanHistoryByDate = async (req, res) => {
+  try {
+    const { date } = req.params;
+    const { userId } = req.query; // userId harus disertakan dalam query
+
+    if (!userId) {
+      return res.status(400).json({ message: 'User ID is required' });
+    }
+
+    // Parse date string to Date object
+    const targetDate = new Date(date);
+    targetDate.setHours(0, 0, 0, 0);
+    const nextDay = new Date(targetDate);
+    nextDay.setDate(nextDay.getDate() + 1);
+
+    // Find the meal history for the specified date
+    const mealHistory = await prisma.dailyMealHistory.findFirst({
+      where: {
+        userId: Number(userId),
+        date: {
+          gte: targetDate,
+          lt: nextDay
+        }
+      },
+      include: {
+        foods: true // Include all food entries to get total calories
+      }
+    });
+
+    if (!mealHistory) {
+      return res.status(404).json({ message: 'No meal history found for the specified date' });
+    }
+
+    // Delete all food entries for this day
+    await prisma.dailyMealFoodEntry.deleteMany({
+      where: {
+        mealHistoryId: mealHistory.id
+      }
+    });
+
+    // Delete the meal history entry
+    await prisma.dailyMealHistory.delete({
+      where: {
+        id: mealHistory.id
+      }
+    });
+
+    res.status(200).json({
+      message: 'Meal plan history deleted successfully for the specified date',
+      deletedDate: targetDate
+    });
+  } catch (error) {
+    console.error('Error deleting meal plan history:', error);
+    res.status(500).json({
+      message: 'Error deleting meal plan history',
+      error: error.message
+    });
+  }
+};
