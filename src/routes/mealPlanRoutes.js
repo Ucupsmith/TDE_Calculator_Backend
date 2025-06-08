@@ -9,7 +9,10 @@ import {
   updateMealSelection,
   getMealPlanSummary,
   getMealPlanByTdeeId,
-  getMealPlanFoods
+  getMealPlanFoods,
+  deleteMealFoodEntry,
+  updateMealFoodEntry,
+  deleteMealPlanHistoryByDate
 } from '../controllers/UserMealSelectionController.js';
 
 // Create meal plan (modified to save daily history)
@@ -30,6 +33,15 @@ router.get('/history', getMealPlanHistory);
 
 // Update meal selection (might need adjustment to update DailyMealHistory/DailyMealFoodEntry)
 router.put('/history/:id', updateMealSelection); // Changed from /selections/:id
+
+// Delete an individual food entry from meal plan history
+router.delete('/history/food/:foodEntryId', deleteMealFoodEntry);
+
+// Delete entire meal plan history for a specific day
+router.delete('/history/day/:date', deleteMealPlanHistoryByDate);
+
+// Update an individual food entry in meal plan history
+router.put('/history/food/:foodEntryId', updateMealFoodEntry);
 
 // Get meal plan summary (might need adjustment)
 router.get('/summary', getMealPlanSummary);
