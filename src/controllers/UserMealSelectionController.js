@@ -57,8 +57,8 @@ export const getCurrentDayCaloriesController = async (req, res) => {
     res.json({
       totalCalories: result.totalCalories,
       remainingCalories: result.remainingCalories,
-      tdeeGoal: userTdee.tdee_result,
-      goal: userTdee.goal,
+      tdeeGoal: result.tdeeGoal,
+      goal: result.goal,
       isNewDay: result.isNewDay
     });
   } catch (error) {
@@ -335,7 +335,7 @@ export const getMealPlanHistory = async (req, res) => {
       totalCalories: day.totalCalories ?? 0, // Provide default 0 if null
       calorieRemaining: day.calorieRemaining ?? 0, // Provide default 0 if null
       // Safely access tdeeResult and goal, provide default if tdee relation is null
-      tdeeResult: day.tdee ? day.tdee.tdee : 0, // Use 0 or a suitable default if tdee is null
+      tdeeResult: day.tdee ? Math.ceil(day.tdee.tdee_result.toNumber()) : 0, // Use 0 or a suitable default if tdee is null
       goal: day.tdee ? day.tdee.goal : 'N/A', // Use 'N/A' or a suitable default if tdee is null
       foods: day.foods.map((foodEntry) => ({
         // Use standard food details if available, otherwise use custom food details
