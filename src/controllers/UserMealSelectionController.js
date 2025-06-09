@@ -396,28 +396,33 @@ export const deleteMealFoodEntry = async (req, res) => {
     const foodEntryIdInt = Number(foodEntryId);
 
     if (isNaN(foodEntryIdInt)) {
-      return res.status(400).json({ message: 'Food Entry ID must be a number' });
+      return res
+        .status(400)
+        .json({ message: 'Food Entry ID must be a number' });
     }
 
     // Find the food entry to be deleted
     const foodEntryToDelete = await prisma.dailyMealFoodEntry.findUnique({
       where: { id: foodEntryIdInt },
-      include: { dailyMealHistory: true } // Include dailyMealHistory to update its calories
+      include: { mealHistory: true } // Include dailyMealHistory to update its calories
     });
 
     if (!foodEntryToDelete) {
       return res.status(404).json({ message: 'Food entry not found' });
     }
 
-    const mealHistory = foodEntryToDelete.dailyMealHistory;
+    const mealHistory = foodEntryToDelete.mealHistory;
     if (!mealHistory) {
-      return res.status(500).json({ message: 'Associated meal history not found' });
+      return res
+        .status(500)
+        .json({ message: 'Associated meal history not found' });
     }
 
     // Calculate calories to subtract based on whether it's a custom food or standard food
     let caloriesToSubtract = 0;
     if (foodEntryToDelete.isCustom) {
-      caloriesToSubtract = foodEntryToDelete.customCalories * foodEntryToDelete.quantity;
+      caloriesToSubtract =
+        foodEntryToDelete.customCalories * foodEntryToDelete.quantity;
     } else if (foodEntryToDelete.foodId) {
       // For standard food, fetch calories from the Food model if available
       const foodDetails = await prisma.food.findUnique({
@@ -466,30 +471,36 @@ export const updateMealFoodEntry = async (req, res) => {
     const quantityInt = Number(quantity);
 
     if (isNaN(foodEntryIdInt) || isNaN(quantityInt) || quantityInt <= 0) {
-      return res.status(400).json({ message: 'Invalid food entry ID or quantity' });
+      return res
+        .status(400)
+        .json({ message: 'Invalid food entry ID or quantity' });
     }
 
     // Find the food entry to be updated
     const foodEntryToUpdate = await prisma.dailyMealFoodEntry.findUnique({
       where: { id: foodEntryIdInt },
-      include: { dailyMealHistory: true, food: true } // Include dailyMealHistory and food to update calories
+      include: { mealHistory: true, food: true } // Include dailyMealHistory and food to update calories
     });
 
     if (!foodEntryToUpdate) {
       return res.status(404).json({ message: 'Food entry not found' });
     }
 
-    const mealHistory = foodEntryToUpdate.dailyMealHistory;
+    const mealHistory = foodEntryToUpdate.mealHistory;
     if (!mealHistory) {
-      return res.status(500).json({ message: 'Associated meal history not found' });
+      return res
+        .status(500)
+        .json({ message: 'Associated meal history not found' });
     }
 
     // Calculate old calories for the food entry
     let oldCalories = 0;
     if (foodEntryToUpdate.isCustom) {
-      oldCalories = foodEntryToUpdate.customCalories * foodEntryToUpdate.quantity;
+      oldCalories =
+        foodEntryToUpdate.customCalories * foodEntryToUpdate.quantity;
     } else if (foodEntryToUpdate.food) {
-      oldCalories = foodEntryToUpdate.food.calories * foodEntryToUpdate.quantity;
+      oldCalories =
+        foodEntryToUpdate.food.calories * foodEntryToUpdate.quantity;
     }
 
     // Calculate new calories for the food entry based on the new quantity
@@ -563,7 +574,9 @@ export const deleteMealPlanHistoryByDate = async (req, res) => {
     });
 
     if (!mealHistory) {
-      return res.status(404).json({ message: 'No meal history found for the specified date' });
+      return res
+        .status(404)
+        .json({ message: 'No meal history found for the specified date' });
     }
 
     // Delete all food entries for this day
