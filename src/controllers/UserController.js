@@ -135,7 +135,7 @@ export const login = async (req, res) => {
 };
 
 export const getUserMealHistory = async (req, res) => {
-  const { userId } = req.params;
+  const { userId } = req.query;
   // In a real application, you'd likely get the userId from the authenticated user's token/session
 
   try {
