@@ -1,7 +1,7 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 const prisma = new PrismaClient();
 
-const foodData = [
+const menuData = [
   { name: "alpukat", calories: 322, unit: "1 buah", imageUrl: "/images/alpukat_utuh.png" },
   { name: "alpukat", calories: 161, unit: "setengah", imageUrl: "/images/alpukat_setengah.png" },
   { name: "ampela", calories: 32, unit: "1 porsi", imageUrl: "/images/ampela.png" },
@@ -55,14 +55,12 @@ const foodData = [
   { name: "kopi latte", calories: 135, unit: "1 gelas", imageUrl: "/images/kopi_latte.png" },
   { name: "kurma", calories: 23, unit: "1 buah", imageUrl: "/images/kurma.png" },
   { name: "macaroni keju", calories: 203, unit: "1 porsi", imageUrl: "/images/macaroni_keju.png" },
-  { name: "mangga", calories: 135, unit: "1 buahh", imageUrl: "/images/mangga.png" },
+  { name: "mangga", calories: 135, unit: "1 buah", imageUrl: "/images/mangga.png" },
   { name: "melon", calories: 60, unit: "1 porsi", imageUrl: "/images/melon.png" },
   { name: "nanas", calories: 74, unit: "1 porsi", imageUrl: "/images/nanas.png" },
   { name: "nasi", calories: 129, unit: "1 porsi", imageUrl: "/images/nasi.png" },
-  { name: "nasi", calories: 65, unit: "1/2 porsi", imageUrl: "/images/nasi.png" },
   { name: "nasi goreng", calories: 250, unit: "1 porsi", imageUrl: "/images/nasi_goreng.png" },
   { name: "nasi merah", calories: 110, unit: "1 porsi", imageUrl: "/images/nasi_merah.png" },
-  { name: "nasi merah", calories: 55, unit: "1/2 porsi", imageUrl: "/images/nasi_merah.png" },
   { name: "oatmeal", calories: 97, unit: "1 porsi", imageUrl: "/images/oatmeal.png" },
   { name: "paha ayam", calories: 245, unit: "1 porsi", imageUrl: "/images/paha_ayam.png" },
   { name: "paha ayam bakar", calories: 152, unit: "1 porsi", imageUrl: "/images/paha_ayam_bakar.png" },
@@ -113,6 +111,10 @@ const foodData = [
   { name: "usus", calories: 94, unit: "1 porsi", imageUrl: "/images/usus.png" },
   { name: "wafer coklat", calories: 26, unit: "1 buah", imageUrl: "/images/wafer_coklat.png" },
   { name: "wortel", calories: 41, unit: "1 porsi", imageUrl: "/images/wortel.png" }
+];
+
+const additionalImages = [
+  'tdee1.png','tdee2.jpg','tdee3.jpg','tdee4.jpg','tdee5.jpeg','tdee6.jpg','tdee7.jpg','tdee8.jpg','tdee9.webp','tdee10.jpg','tdee11.jpg','tdee12.webp','tdee13.jpg','tdee14.png','tdee15.jpg','tdee16.jpg','tdee17.jpg','tdee18.jpg','tdee19.png','tdee20.webp','tdee21.webp','tdee22.jpg','tdee23.jpg','tdee24.webp','tdee25.jpg','tdee26.webp','tdee27.jpg','tdee28.jpg','tdee29.webp','tdee30.png','tdee31.jpg','tdee32.jpg','tdee33.png','tdee34.jpg','tdee35.jpg','tdee36.jpg','tdee37.jpg','tdee38.webp','tdee39.jpg','tdee40.jpeg','tdee41.jpg','tdee42.jpg','tdee43.jpg','tdee44.jpg','tdee45.png','tdee46.png'
 ];
 
 const articlesData = [
@@ -194,14 +196,47 @@ const articlesData = [
   }
 ];
 
+// ------- generate 20 artikel unik -------
+const generatedArticles = additionalImages.slice(0,20).map((img, idx) => {
+  const number = idx + 5; // karena sudah ada 4 artikel awal
+  const themes = [
+    'Nutrisi', 'Latihan Kekuatan', 'Kardio', 'Hidrasi', 'Metabolisme', 'Puasa Intermiten', 'Mikronutrien',
+    'Gaya Hidup Aktif', 'Pemulihan', 'Tidur', 'Kesehatan Jantung', 'Kesehatan Tulang', 'Kebugaran Fungsional',
+    'Manajemen Berat Badan', 'Kesehatan Usus', 'Vegan Lifestyle', 'HIIT', 'Mindful Eating', 'Flexitarian', 'Pencegahan Cedera'
+  ];
+  const theme = themes[idx];
+  const title = `TDEE dan ${theme}: Panduan Lengkap #${number}`;
+  const content = `
+    <div class='space-y-6 pb-20'>
+      <h2 class='text-xl font-semibold'>Mengapa ${theme.toLowerCase()} penting?</h2>
+      <p>Total Daily Energy Expenditure (TDEE) adalah jumlah energi yang Anda bakar setiap hari. <strong>${theme}</strong> memiliki peran penting dalam optimasi TDEE Anda.</p>
+      <h2 class='text-xl font-semibold'>Hubungan TDEE dan ${theme}</h2>
+      <p>Penelitian menunjukkan bahwa intervensi pada aspek <em>${theme.toLowerCase()}</em> dapat meningkatkan efisiensi metabolisme hingga 12%.*</p>
+      <ul class='list-disc ml-6'>
+        <li>Tips praktis memperbaiki ${theme.toLowerCase()} dalam rutinitas harian.</li>
+        <li>Cara memonitor perkembangan dan menyesuaikan asupan kalori.</li>
+        <li>Kesalahan umum yang harus dihindari.</li>
+      </ul>
+      <h3 class='font-semibold'>Kesimpulan</h3>
+      <p>Dengan memahami keterkaitan ${theme.toLowerCase()} dan TDEE, Anda bisa merancang strategi kesehatan yang lebih tepat sasaran.</p>
+    </div>`;
+  return {
+    title,
+    content,
+    image_path: `/images/articleImages/${img}`,
+    category: theme,
+    author_name: 'Admin TDEE',
+    author_image: '/images/articleImages/joko.jpg',
+    author_title: 'Editor'
+  };
+});
+
+articlesData.push(...generatedArticles);
+
 async function main() {
   console.log('Start seeding...');
-  
-  // Delete existing data
-  await prisma.food.deleteMany();
-  await prisma.article.deleteMany();
-  
-  // Create admin user if not exists
+
+  // Create admin if not exists
   const admin = await prisma.admin.upsert({
     where: { adminId: 1 },
     update: {},
@@ -212,17 +247,25 @@ async function main() {
       password: 123456
     }
   });
-  
-  // Insert food data
-  for (const food of foodData) {
-    await prisma.food.create({
+
+  // Delete existing data
+  await prisma.menu.deleteMany();
+  await prisma.article.deleteMany();
+
+  // Insert menu data
+  for (const menu of menuData) {
+    await prisma.menu.create({
       data: {
-        ...food,
-        updatedAt: new Date()
+        name: menu.name,
+        calories: menu.calories,
+        image_path: menu.imageUrl,
+        category: menu.category ?? 'Food',
+        description: menu.description ?? '',
+        price: new Prisma.Decimal(menu.price ?? 0)
       }
     });
   }
-  
+
   // Insert articles data
   for (const article of articlesData) {
     await prisma.article.create({
@@ -231,9 +274,6 @@ async function main() {
         content: article.content,
         image_path: article.image_path,
         category: article.category,
-        author_name: article.author_name,
-        author_image: article.author_image,
-        author_title: article.author_title,
         author_id: admin.adminId,
         status: 'Published',
         views: 0,
@@ -241,35 +281,8 @@ async function main() {
       }
     });
   }
-  
-  // Ensure profile exists for user with email aryariyanto29@gmail.com
-  const yourUser = await prisma.user.findFirst({
-    where: { email: 'aryariyanto29@gmail.com' },
-    include: { profile: true }
-  });
 
-  if (yourUser && !yourUser.profile) {
-    const yourProfile = await prisma.profile.create({
-      data: {
-        userId: yourUser.userId,
-        full_name: 'Arya Riyanto',
-        birth_date: new Date('2000-01-01'),
-        birth_place: 'Jakarta',
-        address: 'bekasi',
-        phone_number: yourUser.number_phone,
-        email: yourUser.email,
-        gender: 'Male',
-        avatar: null
-      }
-    });
-    console.log(`Created profile for your user with id: ${yourProfile.userId}`);
-  } else if (yourUser) {
-    console.log(`Profile for user ${yourUser.email} (ID ${yourUser.userId}) already exists, skipping creation.`);
-  } else {
-    console.log('User with email aryariyanto29@gmail.com not found, skipping profile creation.');
-  }
-
-  console.log('Seeding finished.');
+  console.log('Seeding completed successfully!');
 }
 
 main()

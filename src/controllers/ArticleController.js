@@ -83,8 +83,11 @@ export const createArticleHandler = async (req, res) => {
 // Get all articles
 export const getAllArticlesHandler = async (req, res) => {
   try {
-    const articles = await getAllArticles();
-    res.json(articles);
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+
+    const { articles, total } = await getAllArticles(page, limit);
+    res.json({ articles, total });
   } catch (error) {
     console.error("Error fetching articles:", error);
     res.status(500).json({ message: "Error fetching articles", error: error.message });
@@ -172,4 +175,3 @@ export const deleteArticleHandler = async (req, res) => {
     res.status(500).json({ message: "Error deleting article", error: error.message });
   }
 };
-
