@@ -2,21 +2,31 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-// Get all articles
-export const getAllArticles = async () => {
+// Get all articles with pagination
+export const getAllArticles = async (page = 1, limit = 10) => {
   try {
-    const articles = await prisma.article.findMany({
-      include: {
-        author: {
-          select: {
-            adminId: true,
-            admin_name: true,
-            email: true
+    const skip = (page - 1) * limit;
+
+    const [articles, total] = await Promise.all([
+      prisma.article.findMany({
+        skip,
+        take: limit,
+        orderBy: { created_at: "desc" },
+        where: { status: "Published" },
+        include: {
+          author: {
+            select: {
+              adminId: true,
+              admin_name: true,
+              email: true
+            }
           }
         }
-      }
-    });
-    return articles;
+      }),
+      prisma.article.count({ where: { status: "Published" } })
+    ]);
+
+    return { articles, total };
   } catch (error) {
     throw new Error(`Error fetching articles: ${error.message}`);
   }
