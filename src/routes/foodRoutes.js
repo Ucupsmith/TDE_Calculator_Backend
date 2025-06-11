@@ -1,23 +1,23 @@
 import express from 'express';
 import {
   getAllFoodsController,
-  getFoodByNameController,
   calculateTotalCaloriesController,
   calculateRemainingCaloriesController,
   getMealPlanFoodsController,
   addCustomFoodController,
   getUserCustomFoodsController,
   deleteUserCustomFoodController,
-  updateUserCustomFoodController
+  updateUserCustomFoodController,
+  getFoodsController
 } from '../controllers/FoodController.js';
 
 const router = express.Router();
 
 // Get all available foods
-router.get('/', getAllFoodsController);
+router.get('/', getFoodsController);
 
 // Get food by name
-router.get('/:name', getFoodByNameController);
+// router.get('/:name', getFoodByNameController);
 
 // Get available foods for meal plan
 router.get('/meal-plan/foods', getMealPlanFoodsController);
