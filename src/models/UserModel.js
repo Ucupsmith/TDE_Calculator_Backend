@@ -24,14 +24,16 @@ export const createUser = async (
   username,
   email,
   number_phone,
-  hashedPassword
+  hashedPassword,
+  googleId = null
 ) => {
   return await prisma.user.create({
     data: {
       username,
       email,
       number_phone,
-      password: hashedPassword
+      password: hashedPassword,
+      googleId,
     }
   });
 };
