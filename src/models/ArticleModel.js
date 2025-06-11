@@ -9,8 +9,8 @@ export const getAllArticles = async () => {
       include: {
         author: {
           select: {
-            id: true,
-            username: true,
+            adminId: true,
+            admin_name: true,
             email: true
           }
         }
@@ -26,12 +26,12 @@ export const getAllArticles = async () => {
 export const getArticleById = async (id) => {
   try {
     const article = await prisma.article.findUnique({
-      where: { id },
+      where: { article_id: parseInt(id) },
       include: {
         author: {
           select: {
-            id: true,
-            username: true,
+            adminId: true,
+            admin_name: true,
             email: true
           }
         }
@@ -55,15 +55,18 @@ export const createArticle = async (title, content, image_path, author_id, categ
       data: {
         title,
         content,
-        imagePath: image_path,
-        authorId: author_id,
-        category
+        image_path,
+        author_id: parseInt(author_id),
+        category,
+        status: 'Published',
+        views: 0,
+        likes: 0
       },
       include: {
         author: {
           select: {
-            id: true,
-            username: true,
+            adminId: true,
+            admin_name: true,
             email: true
           }
         }
@@ -80,18 +83,18 @@ export const createArticle = async (title, content, image_path, author_id, categ
 export const updateArticle = async (id, title, content, image_path, category) => {
   try {
     const updatedArticle = await prisma.article.update({
-      where: { id },
+      where: { article_id: parseInt(id) },
       data: {
         title,
         content,
-        imagePath: image_path,
+        image_path,
         category
       },
       include: {
         author: {
           select: {
-            id: true,
-            username: true,
+            adminId: true,
+            admin_name: true,
             email: true
           }
         }
@@ -108,7 +111,7 @@ export const updateArticle = async (id, title, content, image_path, category) =>
 export const deleteArticle = async (id) => {
   try {
     await prisma.article.delete({
-      where: { id }
+      where: { article_id: parseInt(id) }
     });
     
     return { message: "Article deleted successfully" };
@@ -117,19 +120,19 @@ export const deleteArticle = async (id) => {
   }
 };
 
-// Get user by ID
+// Get admin by ID
 export const getUserById = async (id) => {
   try {
-    const user = await prisma.user.findUnique({
-      where: { id }
+    const admin = await prisma.admin.findUnique({
+      where: { adminId: parseInt(id) }
     });
     
-    if (!user) {
-      throw new Error("User not found");
+    if (!admin) {
+      throw new Error("Admin not found");
     }
     
-    return user;
+    return admin;
   } catch (error) {
-    throw new Error(`Error fetching user: ${error.message}`);
+    throw new Error(`Error fetching admin: ${error.message}`);
   }
 }; 

@@ -115,43 +115,152 @@ const foodData = [
   { name: "wortel", calories: 41, unit: "1 porsi", imageUrl: "/images/wortel.png" }
 ];
 
+const articlesData = [
+  { 
+    title: "TDEE dan Kesehatan Sistem Imun", 
+    content: `<div class='space-y-6 pb-20'>
+      <div class="flex items-center space-x-4 mb-6">
+        <img src="/images/articleImages/joko.jpg" alt="Dr. Joko Susilo" class="w-16 h-16 rounded-full object-cover">
+        <div>
+          <h3 class="font-semibold text-gray-800">Dr. Joko Susilo</h3>
+          <p class="text-sm text-gray-600">Ahli Gizi & Nutrisi</p>
+        </div>
+      </div>
+      <h1>TDEE dan Kesehatan Sistem Imun: Kunci Pertahanan Tubuh yang Kuat</h1>
+      // ... rest of the content ...
+    </div>`, 
+    image_path: "/images/articleImages/tdee50.jpg", 
+    category: "Immune System",
+    author_name: "Dr. Joko Susilo",
+    author_image: "/images/articleImages/joko.jpg",
+    author_title: "Ahli Gizi & Nutrisi"
+  },
+  { 
+    title: "TDEE dan Manajemen Stres", 
+    content: `<div class='space-y-6 pb-20'>
+      <div class="flex items-center space-x-4 mb-6">
+        <img src="/images/articleImages/marsya.svg" alt="Marsya Putri" class="w-16 h-16 rounded-full object-cover">
+        <div>
+          <h3 class="font-semibold text-gray-800">Marsya Putri</h3>
+          <p class="text-sm text-gray-600">Psikolog & Wellness Coach</p>
+        </div>
+      </div>
+      <h1>TDEE dan Manajemen Stres: Keseimbangan Energi untuk Ketenangan Pikiran</h1>
+      // ... rest of the content ...
+    </div>`, 
+    image_path: "/images/articleImages/tdee49.jpg", 
+    category: "Stress Management",
+    author_name: "Marsya Putri",
+    author_image: "/images/articleImages/marsya.svg",
+    author_title: "Psikolog & Wellness Coach"
+  },
+  { 
+    title: "TDEE dan Kualitas Tidur", 
+    content: `<div class='space-y-6 pb-20'>
+      <div class="flex items-center space-x-4 mb-6">
+        <img src="/images/articleImages/budi.jpg" alt="Budi Santoso" class="w-16 h-16 rounded-full object-cover">
+        <div>
+          <h3 class="font-semibold text-gray-800">Budi Santoso</h3>
+          <p class="text-sm text-gray-600">Sleep Specialist & Health Coach</p>
+        </div>
+      </div>
+      <h1>TDEE dan Kualitas Tidur: Rahasia Kesehatan Optimal</h1>
+      // ... rest of the content ...
+    </div>`, 
+    image_path: "/images/articleImages/tdee48.jpg", 
+    category: "Sleep",
+    author_name: "Budi Santoso",
+    author_image: "/images/articleImages/budi.jpg",
+    author_title: "Sleep Specialist & Health Coach"
+  },
+  { 
+    title: "TDEE dan Kesehatan Mental", 
+    content: `<div class='space-y-6 pb-20'>
+      <div class="flex items-center space-x-4 mb-6">
+        <img src="/images/articleImages/nilon.jpg" alt="Nilon Wijaya" class="w-16 h-16 rounded-full object-cover">
+        <div>
+          <h3 class="font-semibold text-gray-800">Nilon Wijaya</h3>
+          <p class="text-sm text-gray-600">Mental Health Expert & Nutritionist</p>
+        </div>
+      </div>
+      <h1>TDEE dan Kesehatan Mental: Keseimbangan Energi untuk Pikiran yang Sehat</h1>
+      // ... rest of the content ...
+    </div>`, 
+    image_path: "/images/articleImages/tdee47.webp", 
+    category: "Mental Health",
+    author_name: "Nilon Wijaya",
+    author_image: "/images/articleImages/nilon.jpg",
+    author_title: "Mental Health Expert & Nutritionist"
+  }
+];
+
 async function main() {
   console.log('Start seeding...');
   
   // Delete existing data
   await prisma.food.deleteMany();
+  await prisma.article.deleteMany();
   
-  // Insert new data
+  // Create admin user if not exists
+  const admin = await prisma.admin.upsert({
+    where: { adminId: 1 },
+    update: {},
+    create: {
+      adminId: 1,
+      admin_name: 'Admin TDEE',
+      email: 'admin@tdeecalculator.com',
+      password: 123456
+    }
+  });
+  
+  // Insert food data
   for (const food of foodData) {
     await prisma.food.create({
       data: {
-        ...food, // Include existing food data (name, calories, unit, imageUrl)
-        updatedAt: new Date(), // Add the missing updatedAt field with current date
-        // createdAt will be automatically set by @default(now()) in schema.prisma
+        ...food,
+        updatedAt: new Date()
       }
     });
   }
   
-  // Ensure profile exists for user with email aryariyanto29@gmail.com (likely userId 2)
+  // Insert articles data
+  for (const article of articlesData) {
+    await prisma.article.create({
+      data: {
+        title: article.title,
+        content: article.content,
+        image_path: article.image_path,
+        category: article.category,
+        author_name: article.author_name,
+        author_image: article.author_image,
+        author_title: article.author_title,
+        author_id: admin.adminId,
+        status: 'Published',
+        views: 0,
+        likes: 0
+      }
+    });
+  }
+  
+  // Ensure profile exists for user with email aryariyanto29@gmail.com
   const yourUser = await prisma.user.findFirst({
     where: { email: 'aryariyanto29@gmail.com' },
-    include: { profile: true }, // Include profile to check if it exists
+    include: { profile: true }
   });
 
   if (yourUser && !yourUser.profile) {
     const yourProfile = await prisma.profile.create({
       data: {
-        userId: yourUser.userId, // Link profile to your user ID
-        full_name: 'Arya Riyanto', // <<< Ganti dengan nama lengkap Anda
-        birth_date: new Date('2000-01-01'), // <<< Ganti dengan tanggal lahir Anda
-        birth_place: 'Jakarta', // <<< Ganti dengan tempat lahir Anda
-        address: 'bekasi', // <<< Ganti dengan alamat Anda
-        phone_number: yourUser.number_phone, // Use phone number from user data
-        email: yourUser.email, // Use email from user data
-        gender: 'Male', // <<< Ganti dengan Gender Anda ('Male' atau 'Female')
-        avatar: null, // Atau path gambar jika ada
-        // createdAt and updatedAt will be automatically set
-      },
+        userId: yourUser.userId,
+        full_name: 'Arya Riyanto',
+        birth_date: new Date('2000-01-01'),
+        birth_place: 'Jakarta',
+        address: 'bekasi',
+        phone_number: yourUser.number_phone,
+        email: yourUser.email,
+        gender: 'Male',
+        avatar: null
+      }
     });
     console.log(`Created profile for your user with id: ${yourProfile.userId}`);
   } else if (yourUser) {

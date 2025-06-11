@@ -84,26 +84,7 @@ export const createArticleHandler = async (req, res) => {
 export const getAllArticlesHandler = async (req, res) => {
   try {
     const articles = await getAllArticles();
-    
-    // Get author information for each article
-    const articlesWithAuthors = await Promise.all(
-      articles.map(async (article) => {
-        try {
-          const author = await getUserById(article.author_id);
-          return {
-            ...article,
-            author_name: author.username
-          };
-        } catch (error) {
-          return {
-            ...article,
-            author_name: "Unknown"
-          };
-        }
-      })
-    );
-    
-    res.json(articlesWithAuthors);
+    res.json(articles);
   } catch (error) {
     console.error("Error fetching articles:", error);
     res.status(500).json({ message: "Error fetching articles", error: error.message });
@@ -114,15 +95,6 @@ export const getAllArticlesHandler = async (req, res) => {
 export const getArticleByIdHandler = async (req, res) => {
   try {
     const article = await getArticleById(req.params.id);
-    
-    // Get author information
-    try {
-      const author = await getUserById(article.author_id);
-      article.author_name = author.username;
-    } catch (error) {
-      article.author_name = "Unknown";
-    }
-    
     res.json(article);
   } catch (error) {
     console.error("Error fetching article:", error);
