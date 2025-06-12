@@ -46,23 +46,29 @@ const getMealHistoryForUser = async (userId) => {
     });
 
     // Map the data to match the frontend's expected structure (optional but good practice)
-    const formattedHistory = mealHistory.map(entry => ({
-      id: entry.id,
-      date: entry.date, // Keep as Date object or format as needed by frontend
-      totalCalories: entry.totalCalories,
-      calorieRemaining: entry.calorieRemaining,
-      tdeeResult: entry.tdee.tdee_result,
-      foods: entry.foods.map(foodEntry => ({
-        // Structure matching the frontend's MealHistoryFood interface
-        id: foodEntry.food ? foodEntry.food.id : null, // Use food ID if available
-        name: foodEntry.isCustom ? foodEntry.customName : foodEntry.food.name,
-        calories: foodEntry.isCustom ? foodEntry.customCalories : foodEntry.food.calories,
-        unit: foodEntry.isCustom ? null : foodEntry.food.unit, // Unit only for non-custom food
-        imageUrl: foodEntry.isCustom ? null : foodEntry.food.imageUrl, // Image only for non-custom food
-        quantity: foodEntry.quantity,
-        isCustom: foodEntry.isCustom, // Include isCustom flag
-      })),
-    }));
+    const formattedHistory = mealHistory.map(entry => {
+      console.log('Debug - raw entry.totalCalories:', entry.totalCalories);
+      console.log('Debug - raw entry.calorieRemaining:', entry.calorieRemaining);
+      console.log('Debug - raw entry.tdee?.tdee_result:', entry.tdee?.tdee_result);
+
+      return ({
+        id: entry.id,
+        date: entry.date, // Keep as Date object or format as needed by frontend
+        totalCalories: Math.ceil(entry.totalCalories.toNumber()),
+        calorieRemaining: Math.ceil(entry.calorieRemaining.toNumber()),
+        tdeeResult: Math.ceil(entry.tdee ? entry.tdee.tdee_result.toNumber() : 0),
+        foods: entry.foods.map(foodEntry => ({
+          // Structure matching the frontend's MealHistoryFood interface
+          id: foodEntry.food ? foodEntry.food.id : null, // Use food ID if available
+          name: foodEntry.isCustom ? foodEntry.customName : foodEntry.food.name,
+          calories: Math.ceil(foodEntry.isCustom ? (foodEntry.customCalories?.toNumber() ?? 0) : (foodEntry.food?.calories?.toNumber() ?? 0)),
+          unit: foodEntry.isCustom ? null : foodEntry.food.unit, // Unit only for non-custom food
+          imageUrl: foodEntry.isCustom ? null : foodEntry.food.imageUrl, // Image only for non-custom food
+          quantity: foodEntry.quantity,
+          isCustom: foodEntry.isCustom, // Include isCustom flag
+        })),
+      });
+    });
 
     return formattedHistory;
   } catch (error) {

@@ -1,8 +1,8 @@
 import {
   getAllFoods,
-  getFoodByName,
   calculateTotalCalories,
-  calculateRemainingCalories
+  calculateRemainingCalories,
+  searchFoodsByName
 } from '../models/FoodModel.js';
 import prisma from '../../prisma/prismaClient.js';
 
@@ -18,21 +18,42 @@ export const getAllFoodsController = (req, res) => {
   }
 };
 
-// Get food by name
-export const getFoodByNameController = (req, res) => {
+export const getFoodsController = (req, res) => {
   try {
-    const { name } = req.params;
-    const food = getFoodByName(name);
-    if (!food) {
-      return res.status(404).json({ message: 'Food not found' });
+    const { name } = req.query; // Gunakan req.query untuk parameter pencarian
+    let foods;
+
+    if (name) {
+      foods = searchFoodsByName(name); // Gunakan fungsi search yang baru
+    } else {
+      foods = getAllFoods(); // Jika tidak ada query 'name', kembalikan semua
     }
-    res.json(food);
+
+    // Pastikan selalu mengembalikan array (bahkan jika kosong)
+    res.json(foods);
   } catch (error) {
+    console.error('Error fetching foods:', error);
     res
       .status(500)
-      .json({ message: 'Error fetching food', error: error.message });
+      .json({ message: 'Error fetching foods', error: error.message });
   }
 };
+
+// Get food by name
+// export const getFoodByNameController = (req, res) => {
+//   try {
+//     const { name } = req.params;
+//     const food = getFoodByName(name);
+//     if (!food) {
+//       return res.status(404).json({ message: 'Food not found' });
+//     }
+//     res.json(food);
+//   } catch (error) {
+//     res
+//       .status(500)
+//       .json({ message: 'Error fetching food', error: error.message });
+//   }
+// };
 
 // Get available foods for meal plan
 export const getMealPlanFoodsController = (req, res) => {

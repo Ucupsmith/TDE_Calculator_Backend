@@ -135,7 +135,7 @@ export const login = async (req, res) => {
 };
 
 export const getUserMealHistory = async (req, res) => {
-  const { userId } = req.params;
+  const { userId } = req.query;
   // In a real application, you'd likely get the userId from the authenticated user's token/session
 
   try {
@@ -146,5 +146,94 @@ export const getUserMealHistory = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ message: error.message || 'Error fetching meal history' });
+  }
+};
+
+export const oauthLoginRegister = async (req, res) => {
+  const { email, username, googleId } = req.body;
+
+  try {
+    let user = await getUserByEmail(email);
+    console.log(`User retrieved by email (${email}):`, user);
+
+    if (user) {
+      // User exists, check if it's a Google-linked account or needs linking
+      if (user.googleId === null || user.googleId === undefined) {
+        // Link existing account with Google ID
+        user = await prisma.user.update({
+          where: { userId: user.userId },
+          data: { googleId: googleId },
+        });
+        console.log(`Linked existing user ${user.userId} with Google ID. Updated user:`, user);
+      } else if (user.googleId !== googleId) {
+        // Conflict: user with this email exists but has a different Google ID
+        return res.status(409).json({ message: 'Email already registered with a different Google account or method.' });
+      }
+      // If user exists and googleId matches, proceed to login
+    } else {
+      // No existing user, create a new one
+      console.log('Creating new user via Google OAuth...');
+      user = await createUser(
+        username,
+        email,
+        null, // Assuming number_phone is not provided by Google OAuth for now
+        null, // Assuming password is not provided by Google OAuth
+        googleId
+      );
+      if (!user) {
+        console.error('createUser returned null or undefined.');
+        return res.status(500).json({ message: 'Failed to create user.' });
+      }
+      console.log(`New user created with ID: ${user.userId} via Google OAuth. Created user:`, user);
+
+      // Create a corresponding profile for the new user
+      try {
+        await prisma.profile.create({
+          data: {
+            userId: user.userId,
+            email: user.email,
+            full_name: user.username,
+            phone_number: null,
+            birth_date: null,
+            birth_place: null,
+            address: null,
+            gender: null
+          }
+        });
+        console.log(`Profile created successfully for user ID: ${user.userId}`);
+      } catch (profileError) {
+        console.error(
+          `Error creating profile for new OAuth user ${user?.userId || 'unknown'}:`,
+          profileError
+        );
+        return res.status(500).json({ message: 'Server Error creating profile during OAuth login/registration' });
+      }
+    }
+
+    // Generate JWT token
+    const token = jwt.sign(
+      {
+        id: user.userId,
+        email: user.email,
+        username: user.username,
+        number_phone: user.number_phone || null,
+      },
+      JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+
+    return res.json({
+      message: 'OAuth login/registration successful',
+      token,
+      data: {
+        id: user.userId,
+        username: user.username,
+        email: user.email,
+        number_phone: user.number_phone || null,
+      },
+    });
+  } catch (error) {
+    console.error('OAuth login/registration server error:', error);
+    return res.status(500).json({ message: 'Server Error during OAuth login/registration' });
   }
 };

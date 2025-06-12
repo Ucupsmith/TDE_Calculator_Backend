@@ -65,7 +65,7 @@ const getProfile = async (req, res) => {
         console.error(
           'Error creating default profile for userId:',
           userId,
-          createError
+          JSON.stringify(createError, null, 2) // Log entire error object
         );
         res.status(500).json({
           status: 'error',

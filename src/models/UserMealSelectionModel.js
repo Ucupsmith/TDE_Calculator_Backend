@@ -67,8 +67,8 @@ export const createUserMealSelection = async (data) => {
 };
 
 export const getCurrentDayCalories = async (userId, tdeeId) => {
-  if (!userId || !tdeeId) {
-    throw new Error('User ID and TDEE ID are required');
+  if (!userId) {
+    throw new Error('User ID is required');
   }
 
   const today = new Date();
@@ -78,48 +78,47 @@ export const getCurrentDayCalories = async (userId, tdeeId) => {
   const endOfDay = new Date(today);
   endOfDay.setHours(23, 59, 59, 999);
 
-  // Get TDEE calculation
-  const tdee = await prisma.tdeeCalculation.findUnique({
+  // Find the DailyMealHistory for today for the given user
+  const dailyMealHistory = await prisma.dailyMealHistory.findFirst({
     where: {
-      tdeeId: Number(tdeeId),
-      userId: userId // Add userId check to ensure the TDEE belongs to the user
-    }
-  });
-
-  if (!tdee) {
-    throw new Error('TDEE calculation not found for this user');
-  }
-
-  // Get today's selections
-  const todaySelections = await prisma.userMealSelection.findMany({
-    where: {
-      userId,
-      tdeeId: Number(tdeeId),
-      selected_date: {
+      userId: Number(userId),
+      date: {
         gte: startOfDay,
-        lte: endOfDay
-      }
+        lte: endOfDay,
+      },
     },
-    orderBy: {
-      selected_date: 'desc'
-    }
+    include: {
+      tdee: true, // Include TDEE calculation to get tdee_result
+    },
   });
 
-  // If no selections today, return full TDEE
-  if (todaySelections.length === 0) {
+  if (!dailyMealHistory) {
+    // If no meal history for today, fetch the latest TDEE result for this user
+    const userTdee = await prisma.tdeeCalculation.findFirst({
+      where: { userId: Number(userId) },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (!userTdee) {
+      return { totalCalories: 0, remainingCalories: 0, tdeeGoal: 0, goal: 'N/A', isNewDay: true };
+    }
+
     return {
       totalCalories: 0,
-      remainingCalories: tdee.tdee_result,
-      isNewDay: true
+      remainingCalories: Math.ceil(userTdee.tdee_result),
+      tdeeGoal: Math.ceil(userTdee.tdee_result),
+      goal: userTdee.goal,
+      isNewDay: true,
     };
   }
 
-  // Return the latest selection's data
-  const latestSelection = todaySelections[0];
+  // If meal history exists, return its values
   return {
-    totalCalories: latestSelection.totalCalories,
-    remainingCalories: latestSelection.remainingCalories,
-    isNewDay: false
+    totalCalories: dailyMealHistory.totalCalories,
+    remainingCalories: dailyMealHistory.calorieRemaining,
+    tdeeGoal: dailyMealHistory.tdee?.tdee_result ?? 0,
+    goal: dailyMealHistory.tdee?.goal ?? 'N/A',
+    isNewDay: false,
   };
 };
 
