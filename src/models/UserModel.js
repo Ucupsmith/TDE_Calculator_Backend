@@ -33,7 +33,7 @@ export const createUser = async (
       email,
       number_phone,
       password: hashedPassword,
-      googleId,
+      googleId
     }
   });
 };

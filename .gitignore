@@ -1,7 +1,8 @@
 #dependencies
 /node_modules
 #Entry Point Database
-.env
+.env*
+.env.dev*
 #dbconfig
 /dbconfig.json
 #build

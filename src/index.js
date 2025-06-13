@@ -34,7 +34,7 @@ app.use((err, req, res, next) => {
 
 // Root route
 app.get('/', (req, res) => {
-  res.status(200).send('welcome to TDEE calculator API');
+  res.status(200).send('welcome to TDEE calculator API ');
 });
 
 // API routes
