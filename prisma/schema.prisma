@@ -10,12 +10,11 @@ datasource db {
 model User {
   userId             Int                 @id @default(autoincrement()) @map("user_id")
   username           String              @db.VarChar(255)
-  password           String?             @db.VarChar(255)
+  password           String              @db.VarChar(255)
   email              String              @db.VarChar(255)
-  googleId           String?             @unique @map("google_id")
   reset_token        String?             @db.VarChar(40)
   reset_token_expiry DateTime?           @db.DateTime(0)
-  number_phone       String?             @db.VarChar(20)
+  number_phone       String              @db.VarChar(20)
   mealPlans          MealPlan[]
   tdeeCalculations   TdeeCalculation[]
   profile            Profile?
