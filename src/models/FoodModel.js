@@ -806,17 +806,23 @@ export const searchFoodsByName = (query) => {
   );
 };
 
-// export const getFoodByName = (name) => {
-//   return foodData.find(
-//     (food) => food.name.toLowerCase() === name.toLowerCase()
-//   );
-// };
+export const getFoodByName = (name) => {
+  return foodData.find(
+    (food) => food.name.toLowerCase() === name.toLowerCase()
+  );
+};
 
 export const calculateTotalCalories = (selectedFoods) => {
   return selectedFoods.reduce((total, food) => {
+    // If it's a custom food, use its calories directly
+    if (food.isCustom) {
+      return total + food.calories * (food.quantity || 1);
+    }
+
+    // For standard foods, look up in foodData
     const foodData = getFoodByName(food.name);
     if (!foodData) return total;
-    return total + foodData.calories;
+    return total + foodData.calories * (food.quantity || 1);
   }, 0);
 };
 
