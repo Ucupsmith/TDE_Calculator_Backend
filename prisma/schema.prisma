@@ -54,7 +54,7 @@ model Profile {
   birth_date   DateTime?      @db.DateTime(0)
   birth_place  String?        @db.VarChar(255)
   address      String?        @db.VarChar(255)
-  phone_number String?        @db.VarChar(12)
+  phone_number String?        @db.VarChar(20)
   email        String         @db.VarChar(255)
   avatar       String?
   gender       Gender?
