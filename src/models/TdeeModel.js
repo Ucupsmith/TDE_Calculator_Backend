@@ -33,14 +33,23 @@ export function calculateBMR(gender, weight, height, age) {
   }
 }
 
+// BMR calculation (Mifflin-St Jeor)
+export function calculateBMRMifflinStJeor(gender, weight, height, age) {
+  if (gender === 'male') {
+    return (10 * weight) + (6.25 * height) - (5 * age) + 5;
+  } else {
+    return (10 * weight) + (6.25 * height) - (5 * age) - 161;
+  }
+}
+
 // TDEE calculation (Katch-McArdle)
 export function calculateTDEE(bmr, activityLevel, goal) {
   const factors = {
-    sedentary: 1.2,
-    slightly_active: 1.375,
-    moderately_active: 1.55,
-    very_active: 1.725,
-    extra_active: 1.9
+    'Sedentary': 1.2,
+    'Lightly Active': 1.375,
+    'Moderately Active': 1.55,
+    'Very Active': 1.725,
+    'Extra Active': 1.9
   };
 
   let baseTDEE = bmr * (factors[activityLevel] || 1.2);
