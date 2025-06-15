@@ -26,26 +26,36 @@ export function getBMICategory(bmi, region = 'asia') {
 
 // BMR calculation (Harris-Benedict)
 export function calculateBMR(gender, weight, height, age) {
-  if (gender === 'male') {
-    return 88.362 + 13.397 * weight + 4.799 * height - 5.677 * age;
+  let bmrResult;
+  if (gender.toLowerCase() === 'male') {
+    const term1 = 88.362;
+    const term2 = 13.397 * weight;
+    const term3 = 4.799 * height;
+    const term4 = 5.677 * age;
+    bmrResult = term1 + term2 + term3 - term4;
   } else {
-    return 447.593 + 9.247 * weight + 3.098 * height - 4.33 * age;
+    const term1 = 447.593;
+    const term2 = 9.247 * weight;
+    const term3 = 3.098 * height;
+    const term4 = 4.33 * age;
+    bmrResult = term1 + term2 + term3 - term4;
   }
+  return bmrResult;
 }
 
 // BMR calculation (Mifflin-St Jeor)
 export function calculateBMRMifflinStJeor(gender, weight, height, age) {
-  if (gender === 'male') {
-    return (10 * weight) + (6.25 * height) - (5 * age) + 5;
+  if (gender.toLowerCase() === 'male') {
+    return 10 * weight + 6.25 * height - 5 * age + 5;
   } else {
-    return (10 * weight) + (6.25 * height) - (5 * age) - 161;
+    return 10 * weight + 6.25 * height - 5 * age - 161;
   }
 }
 
 // TDEE calculation (Katch-McArdle)
 export function calculateTDEE(bmr, activityLevel, goal) {
   const factors = {
-    'Sedentary': 1.2,
+    Sedentary: 1.2,
     'Lightly Active': 1.375,
     'Moderately Active': 1.55,
     'Very Active': 1.725,
@@ -104,14 +114,17 @@ export const deleteTdeeCalculation = async (tdeeId, userId) => {
     const deletedTdee = await prisma.tdeeCalculation.delete({
       where: {
         tdeeId: tdeeId, // Delete by TDEE ID
-        userId: userId, // Ensure the user owns this TDEE calculation
-      },
+        userId: userId // Ensure the user owns this TDEE calculation
+      }
     });
     return deletedTdee;
   } catch (error) {
     // Handle case where TDEE calculation is not found or doesn't belong to the user
-    if (error.code === 'P2025') { // P2025: An operation failed because it depends on one or more records that were required but not found.
-      throw new Error('TDEE calculation not found or does not belong to the user.');
+    if (error.code === 'P2025') {
+      // P2025: An operation failed because it depends on one or more records that were required but not found.
+      throw new Error(
+        'TDEE calculation not found or does not belong to the user.'
+      );
     }
     throw new Error(`Error deleting TDEE calculation: ${error.message}`);
   }

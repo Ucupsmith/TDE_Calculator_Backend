@@ -23,6 +23,12 @@ export const calculateTdeeOnly = (req, res) => {
   const bmr = calculateBMR(gender, weight, height, age);
   const tdee = calculateTDEE(bmr, activity_level, goal);
 
+  console.log('--- Debug TDEE Calculation ---');
+  console.log('Input Data:', { gender, weight, height, age, activity_level, goal, region });
+  console.log('Calculated BMR:', bmr.toFixed(2));
+  console.log('Calculated TDEE:', tdee.toFixed(2));
+  console.log('------------------------------');
+
   res.json({
     bmi: bmi.toFixed(2),
     bmiCategory,
