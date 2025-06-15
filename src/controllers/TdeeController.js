@@ -6,7 +6,8 @@ import {
   saveTdeeCalculation,
   getTdeeByProfileId,
   getLastTdeeCalculation,
-  deleteTdeeCalculation
+  deleteTdeeCalculation,
+  calculateBMRMifflinStJeor
 } from '../models/TdeeModel.js';
 import prisma from '../../prisma/prismaClient.js';
 
@@ -20,6 +21,28 @@ export const calculateTdeeOnly = (req, res) => {
   const bmi = calculateBMI(weight, height);
   const bmiCategory = getBMICategory(bmi, region || 'asia');
   const bmr = calculateBMR(gender, weight, height, age);
+  const tdee = calculateTDEE(bmr, activity_level, goal);
+
+  res.json({
+    bmi: bmi.toFixed(2),
+    bmiCategory,
+    bmr: bmr.toFixed(2),
+    tdee: tdee.toFixed(2),
+    goal
+  });
+};
+
+// Hitung TDEE tanpa save menggunakan rumus Mifflin-St Jeor
+export const calculateTdeeMifflinStJeorOnly = (req, res) => {
+  console.log('Received body for Mifflin-St Jeor:', req.body);
+  const { gender, weight, height, age, activity_level, region, goal } =
+    req.body;
+  if (!gender || !weight || !height || !age || !activity_level || !goal) {
+    return res.status(400).json({ message: 'Missing required fields' });
+  }
+  const bmi = calculateBMI(weight, height);
+  const bmiCategory = getBMICategory(bmi, region || 'asia');
+  const bmr = calculateBMRMifflinStJeor(gender, weight, height, age);
   const tdee = calculateTDEE(bmr, activity_level, goal);
 
   res.json({
